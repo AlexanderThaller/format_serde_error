@@ -1,0 +1,9 @@
+condense_wildcard_suffixes  =  true
+format_strings              =  true
+imports_granularity         =  "Crate"
+imports_indent              =  "Block"
+imports_layout              =  "Vertical"
+normalize_comments          =  true
+reorder_imports             =  true
+use_try_shorthand           =  true
+wrap_comments               =  true
