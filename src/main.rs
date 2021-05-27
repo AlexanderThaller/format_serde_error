@@ -68,7 +68,7 @@ fn print_err(json_str: &str, err: serde_json::Error) -> Result<(), anyhow::Error
         .skip(skip)
         .take(take)
         // Make the index start at 1 makes it nicer to work with
-        // Also remove whitespaces used for formatting
+        // Also remove unneccessary whitespaces in front of text
         .map(|(index, line)| (index + 1, line.chars().skip(whitespaces).collect::<String>()))
     {
         if line != err.line() {
