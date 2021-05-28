@@ -41,7 +41,7 @@ fn test_yaml() -> Result<(), anyhow::Error> {
 }
 
 fn test_json() -> Result<(), anyhow::Error> {
-    let mut reader = std::io::BufReader::new(std::fs::File::open("config.json")?);
+    let mut reader = std::io::BufReader::new(std::fs::File::open("config_pretty.json")?);
     let mut config_str = String::new();
 
     reader.read_to_string(&mut config_str)?;
