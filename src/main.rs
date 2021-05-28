@@ -16,16 +16,39 @@ mod config;
 use config::Config;
 
 fn main() -> Result<(), anyhow::Error> {
+    if let Err(err) = test_yaml() {
+        println!("{}", err)
+    }
+
+    if let Err(err) = test_json() {
+        println!("{}", err)
+    }
+
+    Ok(())
+}
+
+fn test_yaml() -> Result<(), anyhow::Error> {
     let mut reader = std::io::BufReader::new(std::fs::File::open("config.yaml")?);
     let mut config_str = String::new();
 
     reader.read_to_string(&mut config_str)?;
-    let config: Config = match serde_yaml::from_str(&config_str) {
+    let _config: Config = match serde_yaml::from_str(&config_str) {
         Ok(c) => c,
         Err(err) => return Err(SerdeError::new(config_str, err)?.into()),
     };
 
-    dbg!(config);
+    Ok(())
+}
+
+fn test_json() -> Result<(), anyhow::Error> {
+    let mut reader = std::io::BufReader::new(std::fs::File::open("config.json")?);
+    let mut config_str = String::new();
+
+    reader.read_to_string(&mut config_str)?;
+    let _config: Config = match serde_json::from_str(&config_str) {
+        Ok(c) => c,
+        Err(err) => return Err(SerdeError::new(config_str, err)?.into()),
+    };
 
     Ok(())
 }
@@ -100,14 +123,14 @@ impl SerdeError {
         // Take lines before and after (context * 2) plus the line with the error ( + 1)
         let take = context * 2 + 1;
 
-        // To reduce the amount of space text takes we want to remove unneccessary
+        // To reduce the amount of space text takes we want to remove unnecessary
         // whitespace in front of the text.
         // Find the line with the least amount of whitespace in front and use
-        // that to remove the whitespaces later.
+        // that to remove the whitespace later.
         // We basically want to find the least indented line.
         // We cant just use trim as that would remove all whitespace and remove all
         // indentation.
-        let whitespaces = self
+        let whitespace_count = self
             .input
             .lines()
             .skip(skip)
@@ -120,7 +143,7 @@ impl SerdeError {
         // No padding, or other formatting
         table.set_format(FormatBuilder::new().build());
 
-        let sepperator = " | ".blue().bold();
+        let separator = " | ".blue().bold();
 
         for (line, text) in self.input
         .lines()
@@ -129,29 +152,29 @@ impl SerdeError {
         .skip(skip)
         .take(take)
         // Make the index start at 1 makes it nicer to work with
-        // Also remove unneccessary whitespaces in front of text
-        .map(|(index, text)| (index + 1, text.chars().skip(whitespaces).collect::<String>()))
+        // Also remove unnecessary whitespace in front of text
+        .map(|(index, text)| (index + 1, text.chars().skip(whitespace_count).collect::<String>()))
         {
             if line != self.line {
                 // Print context lines
-                table.add_row(row!["", sepperator, text.yellow(),]);
+                table.add_row(row!["", separator, text.yellow(),]);
             } else {
                 // Print error line
                 table.add_row(row![
                     format!(" {}", line).to_string().blue().bold(),
-                    sepperator,
+                    separator,
                     text,
                 ]);
 
                 // Print error information
                 table.add_row(row![
                     "",
-                    sepperator,
+                    separator,
                     format!(
                         "{: >column$}^ {}",
                         "",
                         self.message,
-                        column = self.column - whitespaces
+                        column = self.column - whitespace_count
                     )
                     .red()
                     .bold(),
