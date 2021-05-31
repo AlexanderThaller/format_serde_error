@@ -1,11 +1,21 @@
 use colored::*;
 use std::fmt;
 
+mod control;
+
 #[cfg(test)]
 mod test;
 
+pub use control::{
+    always_color,
+    never_color,
+    set_color_control,
+    use_envionment,
+    ColorControl,
+};
+
 /// Amount of lines to show before and after the error line
-const CONTEXT_LINES: usize = 3;
+pub const CONTEXT_LINES: usize = 3;
 
 #[derive(Debug)]
 pub struct SerdeError {
@@ -60,12 +70,12 @@ impl SerdeError {
             },
         };
 
-        dbg!(Ok(Self {
+        Ok(Self {
             input,
             message,
             line,
             column,
-        }))
+        })
     }
 
     fn format(&self, f: &mut fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
