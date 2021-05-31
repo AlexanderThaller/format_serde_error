@@ -1,6 +1,17 @@
 [package]
 name = "format_serde_error"
 version = "0.1.0"
+
+authors = ["Alexander Thaller <alexander.thaller@trivago.com>"]
+description = "Format serde errors in a way to make it obvious where the error in the source file was."
+documentation = "https://docs.rs/format_serde_error/"
+homepage = "https://github.com/AlexanderThaller/format_serde_error"
+keywords = ["serde", "error", "formatting"]
+categories = ["command-line-interface", "value-formatting"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/AlexanderThaller/format_serde_error"
+
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
