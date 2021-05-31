@@ -47,6 +47,12 @@ jobs:
       - name: Run tests with default features disabled
         run: cargo test --no-default-features --verbose
 
+      - name: Run tests with all features enabled
+        run: cargo test --all-features --verbose
+
+      - name: Run tests with only serde_yaml features enabled
+        run: cargo test --no-default-features features="serde_yaml" --verbose
+
   build:
     runs-on: ubuntu-latest
     steps:
