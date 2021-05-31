@@ -96,7 +96,7 @@ impl SerdeError {
 
         // When we dont print the line_position we want to fill up the space not used by
         // the line_position with whitespaces instead
-        let fill_line_position = format!(" {: >fill$}", "", fill = self.line.to_string().len());
+        let fill_line_position = format!("{: >fill$}", "", fill = self.line.to_string().len());
 
         // Want to avoid printing when we are not at the beginning of the line. For
         // example anyhow will write 'Error:' in front of the output before
@@ -141,13 +141,9 @@ impl SerdeError {
         fill_line_position: &str,
     ) -> Result<(), std::fmt::Error> {
         if line_position != self.line {
-            // Format context lines
             self.format_context_line(f, text, separator, fill_line_position)
         } else {
-            // Format error line
             self.format_error_line(f, text, line_position, separator)?;
-
-            // Format error information
             self.format_error_information(f, whitespace_count, separator, fill_line_position)
         }
     }
@@ -159,7 +155,7 @@ impl SerdeError {
         separator: &colored::ColoredString,
         fill_line_position: &str,
     ) -> Result<(), std::fmt::Error> {
-        writeln!(f, "{}{}{}", fill_line_position, separator, text.yellow())
+        writeln!(f, " {}{}{}", fill_line_position, separator, text.yellow())
     }
 
     fn format_error_line(
@@ -186,7 +182,7 @@ impl SerdeError {
         fill_line_position: &str,
     ) -> Result<(), std::fmt::Error> {
         // Print whitespaces until we reach the column value of the message. We also
-        // have to skip the amount of whitespace from the other lines
+        // have to add the amount of whitespace infront of the other lines.
         let fill_column_position = format!(
             "{: >column$}^ {}",
             "",
@@ -196,7 +192,7 @@ impl SerdeError {
 
         writeln!(
             f,
-            "{}{}{}",
+            " {}{}{}",
             fill_line_position,
             separator,
             fill_column_position.red().bold(),
