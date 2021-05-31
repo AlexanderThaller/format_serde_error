@@ -12,7 +12,6 @@ fn separator() -> ColoredString {
     " | ".blue().bold()
 }
 
-#[test]
 fn init() {
     crate::never_color();
 }
@@ -36,6 +35,8 @@ mod yaml {
 
     #[test]
     fn empty_config_file() -> Result<(), anyhow::Error> {
+        super::init();
+
         let input = "";
         let expected = format!("{}\n", "EOF while parsing a value".red().bold());
         let got = run_yaml(input)?;
@@ -49,8 +50,10 @@ mod yaml {
 
     #[test]
     fn example_config_file() -> Result<(), anyhow::Error> {
-        let input = include_str!("../../resources/config.yaml");
+        super::init();
         let separator = super::separator();
+
+        let input = include_str!("../../resources/config.yaml");
 
         let mut expected = String::new();
         expected.push_str("\n");
@@ -108,6 +111,8 @@ mod json {
 
     #[test]
     fn empty_config_file() -> Result<(), anyhow::Error> {
+        super::init();
+
         let input = "";
         let expected = format!(
             "{}\n",
@@ -125,8 +130,10 @@ mod json {
 
     #[test]
     fn empty_config_file_only_map() -> Result<(), anyhow::Error> {
-        let input = "{}";
+        super::init();
         let separator = super::separator();
+
+        let input = "{}";
 
         let mut expected = String::new();
         expected.push_str("\n");
@@ -149,8 +156,10 @@ mod json {
 
     #[test]
     fn unterminated_map() -> Result<(), anyhow::Error> {
-        let input = "{";
+        super::init();
         let separator = super::separator();
+
+        let input = "{";
 
         let mut expected = String::new();
         expected.push_str("\n");
@@ -175,6 +184,8 @@ mod json {
 
     #[test]
     fn example_config_file() -> Result<(), anyhow::Error> {
+        super::init();
+
         let input = include_str!("../../resources/config_pretty.json");
         let separator = super::separator();
 
