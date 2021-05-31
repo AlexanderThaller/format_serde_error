@@ -96,7 +96,7 @@ impl SerdeError {
 
         // When we dont print the line_position we want to fill up the space not used by
         // the line_position with whitespaces instead
-        let fill_line_position = format!(" {: >fill$}", "", fill = number_length(self.line));
+        let fill_line_position = format!(" {: >fill$}", "", fill = self.line.to_string().len());
 
         // Want to avoid printing when we are not at the beginning of the line. For
         // example anyhow will write 'Error:' in front of the output before
@@ -202,15 +202,4 @@ impl SerdeError {
             fill_column_position.red().bold(),
         )
     }
-}
-
-fn number_length(mut number: usize) -> usize {
-    let mut len = 0;
-
-    while number > 0 {
-        number /= 10;
-        len += 1;
-    }
-
-    len
 }
