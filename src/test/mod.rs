@@ -1,40 +1,76 @@
-use anyhow::bail;
-use std::io::Read;
-
 mod config;
 
 use crate::SerdeError;
 use config::Config;
 
-#[test]
-fn test_yaml() -> Result<(), anyhow::Error> {
-    let mut reader = std::io::BufReader::new(std::fs::File::open("../../resources/config.yaml")?);
-    let mut config_str = String::new();
+mod yaml {
+    use anyhow::bail;
+    use colored::Colorize;
 
-    reader.read_to_string(&mut config_str)?;
-    let _config: Config = match serde_yaml::from_str(&config_str) {
-        Ok(c) => c,
-        Err(err) => return Err(SerdeError::new(config_str, err)?.into()),
+    use super::{
+        Config,
+        SerdeError,
     };
 
-    Ok(())
+    fn run_yaml(config_str: &str) -> Result<String, anyhow::Error> {
+        match serde_yaml::from_str::<Config>(config_str) {
+            Ok(_) => bail!("expecting error got a ok"),
+            Err(err) => {
+                dbg!(&err);
+
+                Ok(format!(
+                    "{}",
+                    dbg!(SerdeError::new(config_str.to_string(), err)?)
+                ))
+            }
+        }
+    }
+
+    #[test]
+    fn empty_config_file() -> Result<(), anyhow::Error> {
+        let input = "";
+        let expected = format!("{}\n", "EOF while parsing a value".red().bold());
+        let got = run_yaml(input)?;
+
+        print!("{}", expected);
+
+        assert_eq!(expected, got);
+
+        Ok(())
+    }
 }
 
-#[test]
-fn test_json() -> Result<(), anyhow::Error> {
-    let mut reader =
-        std::io::BufReader::new(std::fs::File::open("../../resources/config_pretty.json")?);
-    let mut config_str = String::new();
+mod json {
+    use anyhow::bail;
+    use colored::Colorize;
 
-    let expected = String::new();
-
-    reader.read_to_string(&mut config_str)?;
-    let got = match serde_json::from_str::<Config>(&config_str) {
-        Ok(c) => bail!("expecting error got a ok"),
-        Err(err) => format!("{}", SerdeError::new(config_str, err)?),
+    use super::{
+        Config,
+        SerdeError,
     };
 
-    assert_eq!(expected, got);
+    fn run_json(config_str: &str) -> Result<String, anyhow::Error> {
+        match serde_json::from_str::<Config>(config_str) {
+            Ok(_) => bail!("expecting error got a ok"),
+            Err(err) => {
+                dbg!(&err);
 
-    Ok(())
+                Ok(format!("{}", SerdeError::new(config_str.to_string(), err)?))
+            }
+        }
+    }
+
+    #[test]
+    fn empty_config_file() -> Result<(), anyhow::Error> {
+        let input = "";
+        let expected = format!(
+            "{}\n",
+            "EOF while parsing a value at line 1 column 0".red().bold()
+        );
+        let got = run_json(input)?;
+
+        assert_eq!(expected, got);
+
+        Ok(())
+    }
 }

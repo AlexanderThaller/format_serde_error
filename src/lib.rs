@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use colored::*;
 use std::fmt;
 
@@ -47,26 +46,35 @@ impl SerdeError {
         let error = err.into();
 
         let (message, line, column) = match error {
-            ErrorTypes::Yaml(ref e) => {
-                let location = e
-                    .location()
-                    .ok_or_else(|| anyhow!("no location found in error"))?;
+            ErrorTypes::Yaml(e) => match e.location() {
+                None => (e.to_string(), 0, 0),
+                Some(location) => (e.to_string(), location.line(), location.column()),
+            },
 
-                (e.to_string(), location.line(), location.column())
-            }
+            ErrorTypes::Json(e) => match e.classify() {
+                // SerdeJson writes line == 1 for eof errors, SerdeYaml writes line == 0 so we
+                // normalize here.
+                serde_json::error::Category::Eof => (e.to_string(), 0, 0),
 
-            ErrorTypes::Json(ref e) => (e.to_string(), e.line(), e.column()),
+                _ => (e.to_string(), e.line(), e.column()),
+            },
         };
 
-        Ok(Self {
+        dbg!(Ok(Self {
             input,
             message,
             line,
             column,
-        })
+        }))
     }
 
     fn format(&self, f: &mut fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        // If line and column are zero we assume that we got an error we can't format
+        // well so we will just print the original message in red and bold
+        if self.line == 0 && self.column == 0 {
+            return writeln!(f, "{}", self.message.red().bold());
+        }
+
         // Amount of lines to show before and after the error line
         let context_lines = CONTEXT_LINES;
 
