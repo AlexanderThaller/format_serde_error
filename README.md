@@ -1,5 +1,8 @@
 # format_serde_error
 
+[![Build Status](https://github.com/AlexanderThaller/format_serde_error/workflows/Rust/badge.svg?branch=main)](https://github.com/AlexanderThaller/format_serde_error/actions?query=workflow%3ARusteain)
+[![crates.io](https://img.shields.io/crates/v/format_serde_error.svg)](https://crates.io/crates/format_serde_error)
+
 !["example output"](resources/example.png)
 
 Format serde errors in a way to make it obvious where the error in the source file was.
