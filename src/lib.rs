@@ -2,6 +2,9 @@ use anyhow::anyhow;
 use colored::*;
 use std::fmt;
 
+#[cfg(test)]
+mod test;
+
 /// Amount of lines to show before and after the error line
 const CONTEXT_LINES: usize = 3;
 
