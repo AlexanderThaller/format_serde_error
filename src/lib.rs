@@ -1,4 +1,13 @@
-use colored::*;
+//! Format serde errors in a way to make it obvious where the error in the
+//! source file was.
+
+#![deny(missing_docs)]
+#![forbid(unsafe_code)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::unwrap_used)]
+#![warn(rust_2018_idioms, unused_lifetimes, missing_debug_implementations)]
+
+use colored::Colorize;
 use std::fmt;
 
 mod control;
@@ -9,25 +18,32 @@ mod test;
 pub use control::{
     always_color,
     never_color,
-    set_color_control,
-    use_envionment,
-    ColorControl,
+    set_coloring_mode,
+    use_environment,
+    ColoringMode,
 };
 
-/// Amount of lines to show before and after the error line
+/// Amount of lines to show before and after the line containing the error.
 pub const CONTEXT_LINES: usize = 3;
 
+/// Struct for formatting the error together with the source file to give a
+/// nicer output.
 #[derive(Debug)]
 pub struct SerdeError {
     input: String,
     message: String,
-    line: usize,
-    column: usize,
+    line: Option<usize>,
+    column: Option<usize>,
 }
 
+/// Supported error types by the crate. Currently only [`serde_yaml`] and
+/// [`serde_json`] are supported.
 #[derive(Debug)]
 pub enum ErrorTypes {
+    /// Contains [`serde_yaml::Error`].
     Yaml(serde_yaml::Error),
+
+    /// Contains [`serde_json::Error`].
     Json(serde_json::Error),
 }
 
@@ -52,38 +68,43 @@ impl From<serde_json::Error> for ErrorTypes {
 }
 
 impl SerdeError {
-    pub fn new(input: String, err: impl Into<ErrorTypes>) -> Result<SerdeError, anyhow::Error> {
+    /// Create a new [`SerdeError`] from compatible serde errors. See
+    /// [`ErrorTypes`] for more information.
+    pub fn new(input: String, err: impl Into<ErrorTypes>) -> SerdeError {
         let error = err.into();
 
         let (message, line, column) = match error {
             ErrorTypes::Yaml(e) => match e.location() {
-                None => (e.to_string(), 0, 0),
-                Some(location) => (e.to_string(), location.line(), location.column()),
+                // Don't set line/column if we don't have a location
+                None => (e.to_string(), None, None),
+
+                Some(location) => (
+                    e.to_string(),
+                    Some(location.line()),
+                    Some(location.column()),
+                ),
             },
 
-            ErrorTypes::Json(e) => match e.classify() {
-                // SerdeJson writes line == 1 for eof errors, SerdeYaml writes line == 0 so we
-                // normalize here.
-                serde_json::error::Category::Eof => (e.to_string(), 0, 0),
-
-                _ => (e.to_string(), e.line(), e.column()),
-            },
+            ErrorTypes::Json(e) => (e.to_string(), Some(e.line()), Some(e.column())),
         };
 
-        Ok(Self {
+        Self {
             input,
             message,
             line,
             column,
-        })
+        }
     }
 
     fn format(&self, f: &mut fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        // If line and column are zero we assume that we got an error we can't format
-        // well so we will just print the original message in red and bold
-        if self.line == 0 && self.column == 0 {
+        // If line and column are not set we assume that we can't make a nice output
+        // so we will just print the original message in red and bold
+        if self.line.is_none() && self.column.is_none() {
             return writeln!(f, "{}", self.message.red().bold());
         }
+
+        let error_line = self.line.unwrap_or_default();
+        let error_column = self.column.unwrap_or_default();
 
         // Amount of lines to show before and after the error line
         let context_lines = CONTEXT_LINES;
@@ -92,10 +113,21 @@ impl SerdeError {
         // plus the line with the error ( + 1)
         // Saturating sub if the error is in the first few line we can't take more
         // context
-        let skip = usize::saturating_sub(self.line, context_lines + 1);
+        let skip = usize::saturating_sub(error_line, context_lines + 1);
 
         // Take lines before and after (context * 2) plus the line with the error ( + 1)
         let take = context_lines * 2 + 1;
+
+        // Minimize the input to only what we need so we can reuse it without
+        // having to iterate over the whole input again.
+        let minimized_input = self.input.lines().skip(skip).take(take).collect::<Vec<_>>();
+
+        // If the minimized_input is empty we can assume that the input was empty as
+        // well. In that case we can't make a nice output so we will just print
+        // the original message in red and bold
+        if minimized_input.is_empty() {
+            return writeln!(f, "{}", self.message.red().bold());
+        }
 
         // To reduce the amount of space text takes we want to remove unnecessary
         // whitespace in front of the text.
@@ -104,20 +136,17 @@ impl SerdeError {
         // We basically want to find the least indented line.
         // We cant just use trim as that would remove all whitespace and remove all
         // indentation.
-        let whitespace_count = self
-            .input
-            .lines()
-            .skip(skip)
-            .take(take)
+        let whitespace_count = minimized_input
+            .iter()
             .map(|line| line.chars().take_while(|s| s.is_whitespace()).count())
             .min()
             .unwrap_or_default();
 
         let separator = " | ".blue().bold();
 
-        // When we dont print the line_position we want to fill up the space not used by
-        // the line_position with whitespaces instead
-        let fill_line_position = format!("{: >fill$}", "", fill = self.line.to_string().len());
+        // When we don't print the line_position we want to fill up the space not used
+        // by the line_position with whitespace instead
+        let fill_line_position = format!("{: >fill$}", "", fill = error_line.to_string().len());
 
         // Want to avoid printing when we are not at the beginning of the line. For
         // example anyhow will write 'Error:' in front of the output before
@@ -142,6 +171,8 @@ impl SerdeError {
                 self.format_line(
                     f,
                     line_position,
+                    error_line,
+                    error_column,
                     &text,
                     whitespace_count,
                     &separator,
@@ -152,35 +183,36 @@ impl SerdeError {
         Ok(())
     }
 
+    // TODO: Maybe make another internal struct for formatting instead of having
+    // this list of args.
+    #[allow(clippy::too_many_arguments)]
     fn format_line(
         &self,
         f: &mut fmt::Formatter<'_>,
         line_position: usize,
+        error_line: usize,
+        error_column: usize,
         text: &str,
         whitespace_count: usize,
         separator: &colored::ColoredString,
         fill_line_position: &str,
     ) -> Result<(), std::fmt::Error> {
-        if line_position != self.line {
-            self.format_context_line(f, text, separator, fill_line_position)
+        if line_position == error_line {
+            Self::format_error_line(f, text, line_position, separator)?;
+
+            self.format_error_information(
+                f,
+                whitespace_count,
+                separator,
+                fill_line_position,
+                error_column,
+            )
         } else {
-            self.format_error_line(f, text, line_position, separator)?;
-            self.format_error_information(f, whitespace_count, separator, fill_line_position)
+            Self::format_context_line(f, text, separator, fill_line_position)
         }
     }
 
-    fn format_context_line(
-        &self,
-        f: &mut fmt::Formatter<'_>,
-        text: &str,
-        separator: &colored::ColoredString,
-        fill_line_position: &str,
-    ) -> Result<(), std::fmt::Error> {
-        writeln!(f, " {}{}{}", fill_line_position, separator, text.yellow())
-    }
-
     fn format_error_line(
-        &self,
         f: &mut fmt::Formatter<'_>,
         text: &str,
         line_position: usize,
@@ -201,14 +233,15 @@ impl SerdeError {
         whitespace_count: usize,
         separator: &colored::ColoredString,
         fill_line_position: &str,
+        error_column: usize,
     ) -> Result<(), std::fmt::Error> {
-        // Print whitespaces until we reach the column value of the message. We also
-        // have to add the amount of whitespace infront of the other lines.
+        // Print whitespace until we reach the column value of the message. We also
+        // have to add the amount of whitespace in front of the other lines.
         let fill_column_position = format!(
             "{: >column$}^ {}",
             "",
             self.message,
-            column = self.column - whitespace_count
+            column = error_column - whitespace_count
         );
 
         writeln!(
@@ -218,5 +251,14 @@ impl SerdeError {
             separator,
             fill_column_position.red().bold(),
         )
+    }
+
+    fn format_context_line(
+        f: &mut fmt::Formatter<'_>,
+        text: &str,
+        separator: &colored::ColoredString,
+        fill_line_position: &str,
+    ) -> Result<(), std::fmt::Error> {
+        writeln!(f, " {}{}{}", fill_line_position, separator, text.yellow())
     }
 }

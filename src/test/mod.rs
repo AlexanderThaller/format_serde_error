@@ -1,7 +1,21 @@
+use colored::{
+    ColoredString,
+    Colorize,
+};
+
 mod config;
 
 use crate::SerdeError;
 use config::Config;
+
+fn separator() -> ColoredString {
+    " | ".blue().bold()
+}
+
+#[test]
+fn init() {
+    crate::never_color();
+}
 
 mod yaml {
     use anyhow::bail;
@@ -16,7 +30,7 @@ mod yaml {
     fn run_yaml(config_str: &str) -> Result<String, anyhow::Error> {
         match serde_yaml::from_str::<Config>(config_str) {
             Ok(_) => bail!("expecting error got a ok"),
-            Err(err) => Ok(format!("{}", SerdeError::new(config_str.to_string(), err)?)),
+            Err(err) => Ok(format!("{}", SerdeError::new(config_str.to_string(), err))),
         }
     }
 
@@ -36,7 +50,7 @@ mod yaml {
     #[test]
     fn example_config_file() -> Result<(), anyhow::Error> {
         let input = include_str!("../../resources/config.yaml");
-        let separator = " | ".blue().bold();
+        let separator = super::separator();
 
         let mut expected = String::new();
         expected.push_str("\n");
@@ -88,7 +102,7 @@ mod json {
     fn run_json(config_str: &str) -> Result<String, anyhow::Error> {
         match serde_json::from_str::<Config>(config_str) {
             Ok(_) => bail!("expecting error got a ok"),
-            Err(err) => Ok(format!("{}", SerdeError::new(config_str.to_string(), err)?)),
+            Err(err) => Ok(format!("{}", SerdeError::new(config_str.to_string(), err))),
         }
     }
 
@@ -101,6 +115,59 @@ mod json {
         );
         let got = run_json(input)?;
 
+        println!("{}", expected);
+        println!("{}", got);
+
+        assert_eq!(expected, got);
+
+        Ok(())
+    }
+
+    #[test]
+    fn empty_config_file_only_map() -> Result<(), anyhow::Error> {
+        let input = "{}";
+        let separator = super::separator();
+
+        let mut expected = String::new();
+        expected.push_str("\n");
+        expected.push_str(&format!(" {}{}{}\n", "1".blue().bold(), separator, "{}",));
+        expected.push_str(&format!(
+            "  {} {}\n",
+            separator,
+            " ^ missing field `values` at line 1 column 2".red().bold(),
+        ));
+
+        let got = run_json(input)?;
+
+        println!("{}", expected);
+        println!("{}", got);
+
+        assert_eq!(expected, got);
+
+        Ok(())
+    }
+
+    #[test]
+    fn unterminated_map() -> Result<(), anyhow::Error> {
+        let input = "{";
+        let separator = super::separator();
+
+        let mut expected = String::new();
+        expected.push_str("\n");
+        expected.push_str(&format!(" {}{}{}\n", "1".blue().bold(), separator, "{",));
+        expected.push_str(&format!(
+            "  {} {}\n",
+            separator,
+            "^ EOF while parsing an object at line 1 column 1"
+                .red()
+                .bold(),
+        ));
+
+        let got = run_json(input)?;
+
+        println!("{}", expected);
+        println!("{}", got);
+
         assert_eq!(expected, got);
 
         Ok(())
@@ -109,7 +176,7 @@ mod json {
     #[test]
     fn example_config_file() -> Result<(), anyhow::Error> {
         let input = include_str!("../../resources/config_pretty.json");
-        let separator = " | ".blue().bold();
+        let separator = super::separator();
 
         let mut expected = String::new();
         expected.push_str("\n");
