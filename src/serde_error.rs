@@ -104,42 +104,18 @@ impl SerdeError {
 
         let separator = " | ".blue().bold();
 
-        for (line, text) in self.input
-        .lines()
-        .into_iter()
-        .enumerate()
-        .skip(skip)
-        .take(take)
-        // Make the index start at 1 makes it nicer to work with
-        // Also remove unnecessary whitespace in front of text
-        .map(|(index, text)| (index + 1, text.chars().skip(whitespace_count).collect::<String>()))
-        {
-            if line != self.line {
-                // Print context lines
-                table.add_row(row!["", separator, text.yellow(),]);
-            } else {
-                // Print error line
-                table.add_row(row![
-                    format!(" {}", line).to_string().blue().bold(),
-                    separator,
-                    text,
-                ]);
-
-                // Print error information
-                table.add_row(row![
-                    "",
-                    separator,
-                    format!(
-                        "{: >column$}^ {}",
-                        "",
-                        self.message,
-                        column = self.column - whitespace_count
-                    )
-                    .red()
-                    .bold(),
-                ]);
-            }
-        }
+        self.input
+            .lines()
+            .into_iter()
+            .enumerate()
+            .skip(skip)
+            .take(take)
+            // Make the index start at 1 makes it nicer to work with
+            // Also remove unnecessary whitespace in front of text
+            .map(|(index, text)| (index + 1, text.chars().skip(whitespace_count).collect::<String>()))
+            .for_each(|(line_position, text)|
+                self.format_line(&mut table, line_position, &text, whitespace_count, &separator)
+            );
 
         // Want to avoid printing when we are not at the beginning of the line. For
         // example anyhow will write 'Error:' in front of the output before
@@ -148,5 +124,68 @@ impl SerdeError {
         write!(f, "{}", table)?;
 
         Ok(())
+    }
+
+    fn format_line(
+        &self,
+        table: &mut Table,
+        line_position: usize,
+        text: &str,
+        whitespace_count: usize,
+        separator: &colored::ColoredString,
+    ) {
+        if line_position != self.line {
+            // Format context lines
+            self.format_context_line(table, text, separator);
+        } else {
+            // Format error line
+            self.format_error_line(table, text, line_position, separator);
+
+            // Format error information
+            self.format_error_information(table, whitespace_count, separator);
+        }
+    }
+
+    fn format_context_line(
+        &self,
+        table: &mut Table,
+        text: &str,
+        separator: &colored::ColoredString,
+    ) {
+        table.add_row(row!["", separator, text.yellow(),]);
+    }
+
+    fn format_error_line(
+        &self,
+        table: &mut Table,
+        text: &str,
+        line_position: usize,
+        separator: &colored::ColoredString,
+    ) {
+        table.add_row(row![
+            format!(" {}", line_position).blue().bold(),
+            separator,
+            text,
+        ]);
+    }
+
+    fn format_error_information(
+        &self,
+        table: &mut Table,
+        whitespace_count: usize,
+        separator: &colored::ColoredString,
+    ) {
+        table.add_row(row![
+            "",
+            separator,
+            format!(
+                "{: >column$}^ {}",
+                "",
+                self.message,
+                column = self.column - whitespace_count
+            )
+            .red()
+            .bold(),
+        ]);
     }
 }
