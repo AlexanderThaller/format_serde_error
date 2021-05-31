@@ -8,10 +8,12 @@ use serde_error::SerdeError;
 
 fn main() -> Result<(), anyhow::Error> {
     if let Err(err) = test_yaml() {
+        print!("test_yaml");
         println!("{}", err)
     }
 
     if let Err(err) = test_json() {
+        print!("test_json");
         println!("{}", err)
     }
 

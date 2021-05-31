@@ -1,11 +1,5 @@
 use anyhow::anyhow;
 use colored::*;
-use prettytable::{
-    cell,
-    format::FormatBuilder,
-    row,
-    Table,
-};
 use std::fmt;
 
 /// Amount of lines to show before and after the error line
@@ -98,11 +92,16 @@ impl SerdeError {
             .min()
             .unwrap_or_default();
 
-        let mut table = Table::new();
-        // No padding, or other formatting
-        table.set_format(FormatBuilder::new().build());
-
         let separator = " | ".blue().bold();
+
+        // When we dont print the line_position we want to fill up the space not used by
+        // the line_position with whitespaces instead
+        let fill_line_position = format!(" {: >fill$}", "", fill = number_length(self.line));
+
+        // Want to avoid printing when we are not at the beginning of the line. For
+        // example anyhow will write 'Error:' in front of the output before
+        // printing the buffer
+        writeln!(f)?;
 
         self.input
             .lines()
@@ -110,82 +109,108 @@ impl SerdeError {
             .enumerate()
             .skip(skip)
             .take(take)
-            // Make the index start at 1 makes it nicer to work with
-            // Also remove unnecessary whitespace in front of text
-            .map(|(index, text)| (index + 1, text.chars().skip(whitespace_count).collect::<String>()))
-            .for_each(|(line_position, text)|
-                self.format_line(&mut table, line_position, &text, whitespace_count, &separator)
-            );
-
-        // Want to avoid printing when we are not at the beginning of the line. For
-        // example anyhow will write 'Error:' in front of the output before
-        // printing the table
-        writeln!(f)?;
-        write!(f, "{}", table)?;
+            .map(|(index, text)| {
+                // Make the index start at 1 makes it nicer to work with
+                // Also remove unnecessary whitespace in front of text
+                (
+                    index + 1,
+                    text.chars().skip(whitespace_count).collect::<String>(),
+                )
+            })
+            .try_for_each(|(line_position, text)| {
+                self.format_line(
+                    f,
+                    line_position,
+                    &text,
+                    whitespace_count,
+                    &separator,
+                    &fill_line_position,
+                )
+            })?;
 
         Ok(())
     }
 
     fn format_line(
         &self,
-        table: &mut Table,
+        f: &mut fmt::Formatter<'_>,
         line_position: usize,
         text: &str,
         whitespace_count: usize,
         separator: &colored::ColoredString,
-    ) {
+        fill_line_position: &str,
+    ) -> Result<(), std::fmt::Error> {
         if line_position != self.line {
             // Format context lines
-            self.format_context_line(table, text, separator);
+            self.format_context_line(f, text, separator, fill_line_position)
         } else {
             // Format error line
-            self.format_error_line(table, text, line_position, separator);
+            self.format_error_line(f, text, line_position, separator)?;
 
             // Format error information
-            self.format_error_information(table, whitespace_count, separator);
+            self.format_error_information(f, whitespace_count, separator, fill_line_position)
         }
     }
 
     fn format_context_line(
         &self,
-        table: &mut Table,
+        f: &mut fmt::Formatter<'_>,
         text: &str,
         separator: &colored::ColoredString,
-    ) {
-        table.add_row(row!["", separator, text.yellow(),]);
+        fill_line_position: &str,
+    ) -> Result<(), std::fmt::Error> {
+        writeln!(f, "{}{}{}", fill_line_position, separator, text.yellow())
     }
 
     fn format_error_line(
         &self,
-        table: &mut Table,
+        f: &mut fmt::Formatter<'_>,
         text: &str,
         line_position: usize,
         separator: &colored::ColoredString,
-    ) {
-        table.add_row(row![
-            format!(" {}", line_position).blue().bold(),
+    ) -> Result<(), std::fmt::Error> {
+        writeln!(
+            f,
+            " {}{}{}",
+            line_position.to_string().blue().bold(),
             separator,
-            text,
-        ]);
+            text
+        )
     }
 
     fn format_error_information(
         &self,
-        table: &mut Table,
+        f: &mut fmt::Formatter<'_>,
         whitespace_count: usize,
         separator: &colored::ColoredString,
-    ) {
-        table.add_row(row![
+        fill_line_position: &str,
+    ) -> Result<(), std::fmt::Error> {
+        // Print whitespaces until we reach the column value of the message. We also
+        // have to skip the amount of whitespace from the other lines
+        let fill_column_position = format!(
+            "{: >column$}^ {}",
             "",
+            self.message,
+            column = self.column - whitespace_count
+        );
+
+        writeln!(
+            f,
+            "{}{}{}",
+            fill_line_position,
             separator,
-            format!(
-                "{: >column$}^ {}",
-                "",
-                self.message,
-                column = self.column - whitespace_count
-            )
-            .red()
-            .bold(),
-        ]);
+            fill_column_position.red().bold(),
+        )
     }
+}
+
+fn number_length(mut number: usize) -> usize {
+    let mut len = 0;
+
+    while number > 0 {
+        number /= 10;
+        len += 1;
+    }
+
+    len
 }
