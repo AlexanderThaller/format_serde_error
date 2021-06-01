@@ -423,19 +423,36 @@ impl SerdeError {
     ) -> (String, usize, bool, bool) {
         use unicode_segmentation::UnicodeSegmentation;
 
+        // As we could deal with unicode we can have characters that are multiple code
+        // points. In that case we do not want to iterate over each code point
+        // (i.e. using text.chars()) we need to use graphemes instead.
         let input = text.graphemes(true).collect::<Vec<_>>();
 
-        // TODO: Documentation
+        // Skip until we are amount of context chars before the error column (context)
+        // plus the column with the error ( + 1) Saturating sub if the error is
+        // in the first few chars we can't take more context
         let skip = usize::saturating_sub(error_column, context_chars + 1);
+
+        // Take chars before and after (context_chars * 2) plus the column with the
+        // error ( + 1)
         let take = context_chars * 2 + 1;
 
-        // TODO: Documentation
+        // If we skipped any characters that means we are contextualizing before the
+        // error. That means that we need to print ... at the beginning of the error
+        // line later on in the code.
         let context_before = skip != 0;
-        let context_after = input.len() > skip + take;
+
+        // If the line is bigger than skipping and taking combined that means that we
+        // not getting the remaining text of the line after the error. That
+        // means that we need to print ... at the end of the error line later on
+        // in the code.
+        let context_after = skip + take < input.len();
 
         let minimized_input = input.into_iter().skip(skip).take(take).collect();
 
-        // TODO: Documentation
+        // Error column has moved to the right as we skipped some characters so we need
+        // to update it. Saturating sub as the error could be at the beginning
+        // of the line.
         let new_error_column = usize::saturating_sub(error_column, skip);
 
         (
