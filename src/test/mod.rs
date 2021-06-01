@@ -408,6 +408,27 @@ mod context_long_line {
         assert!(context_before);
         assert!(!context_after);
     }
+
+    /// Test for unicode compatibility
+    #[test]
+    fn unicode_string() {
+        let input = "\u{20ac}123456789!\u{20ac}123456789";
+        let error_column = 11;
+        let context_chars = 5;
+        let expected = "56789!\u{20ac}1234";
+        let expected_char = '!';
+
+        let (got, new_error_column, context_before, context_after) =
+            super::SerdeError::context_long_line(input, error_column, context_chars);
+        let got_char = got.chars().nth(new_error_column - 1).unwrap_or_default();
+
+        // 13 instead of 11 because len for a string will not do graphemes
+        assert_eq!(13, got.len());
+        assert_eq!(expected_char, got_char);
+        assert_eq!(expected, got);
+        assert!(context_before);
+        assert!(context_after);
+    }
 }
 
 mod custom {
