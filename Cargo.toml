@@ -27,6 +27,7 @@ colored = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", optional = true }
 serde_yaml = { version = "0.8", optional = true }
+unicode-segmentation = "1"
 
 [dev-dependencies]
 anyhow = "1"
@@ -35,3 +36,11 @@ pretty_assertions = "0.7"
 [[example]]
 name = "serde_yaml"
 required-features = ["serde_yaml"]
+
+[[example]]
+name = "serde_json"
+required-features = ["serde_json"]
+
+[[example]]
+name = "serde_json_long"
+required-features = ["serde_json"]
