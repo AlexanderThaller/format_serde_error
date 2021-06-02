@@ -1,3 +1,5 @@
+//! Serde error messages for humans.
+//!
 //! Format serde errors in a way to make it obvious where the error in the
 //! source file was.
 //!

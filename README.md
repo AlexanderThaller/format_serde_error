@@ -4,6 +4,8 @@
 [![crates.io](https://img.shields.io/crates/v/format_serde_error.svg)](https://crates.io/crates/format_serde_error)
 [![docs.rs](https://docs.rs/format_serde_error/badge.svg)](https://docs.rs/format_serde_error)
 
+Serde error messages for humans.
+
 Format serde errors in a way to make it obvious where the error in the source file was.
 
 Currently [serde_yaml](https://github.com/serde-rs/json) and
