@@ -422,8 +422,8 @@ mod context_long_line {
             super::SerdeError::context_long_line(input, error_column, context_chars);
         let got_char = got.chars().nth(new_error_column - 1).unwrap_or_default();
 
-        // 13 instead of 11 because len for a string gives back the amount of codepoints not the
-        //    amount of characters
+        // 13 instead of 11 because len for a string gives back the amount of codepoints
+        // not the amount of characters
         assert_eq!(13, got.len());
         assert_eq!(expected_char, got_char);
         assert_eq!(expected, got);
@@ -445,8 +445,8 @@ mod context_long_line {
             super::SerdeError::context_long_line(input, error_column, context_chars);
         let got_char = got.chars().nth(new_error_column - 1).unwrap_or_default();
 
-        // 19 instead of 11 because len for a string gives back the amount of codepoints not the
-        //    amount of characters
+        // 19 instead of 11 because len for a string gives back the amount of codepoints
+        // not the amount of characters
         assert_eq!(19, got.len());
         assert_eq!(expected_char, got_char);
         assert_eq!(expected, got);
