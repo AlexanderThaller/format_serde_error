@@ -421,12 +421,19 @@ impl SerdeError {
         error_column: usize,
         context_chars: usize,
     ) -> (String, usize, bool, bool) {
+        #[cfg(feature = "graphemes_support")]
         use unicode_segmentation::UnicodeSegmentation;
 
+        #[cfg(feature = "graphemes_support")]
         // As we could deal with unicode we can have characters that are multiple code
         // points. In that case we do not want to iterate over each code point
         // (i.e. using text.chars()) we need to use graphemes instead.
         let input = text.graphemes(true).collect::<Vec<_>>();
+
+        #[cfg(not(feature = "graphemes_support"))]
+        // If graphemes are not something we expect to deal with we can also just use chars
+        // instead.
+        let input = text.chars().collect::<Vec<_>>();
 
         // Skip until we are amount of context chars before the error column (context)
         // plus the column with the error ( + 1) Saturating sub if the error is
