@@ -85,10 +85,10 @@ pub struct SerdeError {
     column: Option<usize>,
 }
 
-// TODO: Add back links to crates when `#[doc(cfg(...))]` (https://github.com/rust-lang/rust/issues/43781) is stable.
-/// Supported error types by the crate:
-/// * `serde_json::Error`
-/// * `serde_yaml::Error`
+/// Contains the error that will be used by [`SerdeError`] to format the output.
+/// For this to work the error needs to support emitting the line and column of
+/// the error. We are implementing [`Into`] for some common types. If a error
+/// type is not implemented yet the [`ErrorTypes::Custom`] can be used instead.
 #[derive(Debug)]
 pub enum ErrorTypes {
     #[cfg(feature = "serde_json")]
@@ -102,11 +102,11 @@ pub enum ErrorTypes {
     /// Used for custom errors that don't come from serde_yaml or
     /// serde_json.
     Custom {
-        /// Error message that should be displayed
+        /// Error message that should be displayed.
         error: Box<dyn std::error::Error>,
-        /// Line the error occured at
+        /// Line the error occured at.
         line: Option<usize>,
-        /// Column the error occured at
+        /// Column the error occured at.
         column: Option<usize>,
     },
 }
