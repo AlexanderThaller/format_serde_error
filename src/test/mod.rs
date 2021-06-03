@@ -16,6 +16,7 @@ fn init() {
     crate::never_color();
 }
 
+#[cfg(feature = "serde_yaml")]
 mod yaml {
     use anyhow::bail;
     use colored::Colorize;
@@ -92,6 +93,7 @@ mod yaml {
     }
 }
 
+#[cfg(feature = "serde_json")]
 mod json {
     use anyhow::bail;
     use colored::Colorize;

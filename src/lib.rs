@@ -13,11 +13,13 @@
 //!     values: Vec<String>,
 //! }
 //! # fn main() {
+//! #   #[cfg(feature = "serde_yaml")]
 //! #   if let Err(err) = parse_config() {
 //! #     eprintln!("{}", err)
 //! #   }
 //! # }
 //!
+//! # #[cfg(feature = "serde_yaml")]
 //! fn parse_config() -> Result<Config, anyhow::Error> {
 //!   let config_str = "values:
 //!   - 'first'
@@ -80,9 +82,11 @@ pub struct SerdeError {
 /// [`serde_json`] are supported.
 #[derive(Debug)]
 pub enum ErrorTypes {
+    #[cfg(feature = "serde_yaml")]
     /// Contains [`serde_yaml::Error`].
     Yaml(serde_yaml::Error),
 
+    #[cfg(feature = "serde_json")]
     /// Contains [`serde_json::Error`].
     Json(serde_json::Error),
 }
@@ -95,12 +99,14 @@ impl fmt::Display for SerdeError {
     }
 }
 
+#[cfg(feature = "serde_yaml")]
 impl From<serde_yaml::Error> for ErrorTypes {
     fn from(err: serde_yaml::Error) -> Self {
         Self::Yaml(err)
     }
 }
 
+#[cfg(feature = "serde_json")]
 impl From<serde_json::Error> for ErrorTypes {
     fn from(err: serde_json::Error) -> Self {
         Self::Json(err)
@@ -114,6 +120,7 @@ impl SerdeError {
         let error = err.into();
 
         let (message, line, column) = match error {
+            #[cfg(feature = "serde_yaml")]
             ErrorTypes::Yaml(e) => match e.location() {
                 // Don't set line/column if we don't have a location
                 None => (e.to_string(), None, None),
@@ -125,6 +132,7 @@ impl SerdeError {
                 ),
             },
 
+            #[cfg(feature = "serde_json")]
             ErrorTypes::Json(e) => (e.to_string(), Some(e.line()), Some(e.column())),
         };
 
