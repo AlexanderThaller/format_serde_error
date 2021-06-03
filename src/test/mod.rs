@@ -1,3 +1,4 @@
+#[cfg(feature = "colored")]
 use colored::{
     ColoredString,
     Colorize,
@@ -6,17 +7,21 @@ use colored::{
 mod config;
 
 use crate::SerdeError;
+#[allow(unused_imports)]
 use config::Config;
 
+#[cfg(feature = "colored")]
 fn separator() -> ColoredString {
-    " | ".blue().bold()
+    super::SEPARATOR.blue()
 }
 
 fn init() {
+    #[cfg(feature = "colored")]
     crate::never_color();
 }
 
-#[cfg(feature = "serde_yaml")]
+// TODO: Make tests that only use serde_yaml feature
+#[cfg(all(feature = "serde_yaml", feature = "colored"))]
 mod yaml {
     use anyhow::bail;
     use colored::Colorize;
@@ -93,7 +98,8 @@ mod yaml {
     }
 }
 
-#[cfg(feature = "serde_json")]
+// TODO: Make tests that only use serde_json feature
+#[cfg(all(feature = "serde_json", feature = "colored"))]
 mod json {
     use anyhow::bail;
     use colored::Colorize;
@@ -225,5 +231,37 @@ mod json {
         assert_eq!(expected, got);
 
         Ok(())
+    }
+}
+
+mod custom {
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn custom_error() {
+        super::init();
+
+        let config_str = "this is just a config file\nthe error is here: !";
+        let line = 2;
+        let column = 19;
+        let err = format!("Found an error at line {}, column {}", line, column);
+
+        let mut expected = String::from("\n");
+        expected.push_str("   | this is just a config file\n");
+        expected.push_str(" 2 | the error is here: !\n");
+        expected.push_str("   |                    ^ Found an error at line 2, column 19\n");
+
+        let got = format!(
+            "{}",
+            super::SerdeError::new(
+                config_str.to_string(),
+                (err.into(), Some(line), Some(column))
+            )
+        );
+
+        println!("got:\n{}", got);
+        println!("expected:\n{}", expected);
+
+        assert_eq!(expected, got);
     }
 }
