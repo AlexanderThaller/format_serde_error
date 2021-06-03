@@ -345,7 +345,7 @@ impl SerdeError {
         #[cfg(not(feature = "colored"))]
         let line_pos = line_position;
 
-        writeln!(f, " {}{}{}", line_pos, separator, text)?;
+        write!(f, " {}{}", line_pos, separator)?;
 
         if context_before {
             #[cfg(feature = "colored")]

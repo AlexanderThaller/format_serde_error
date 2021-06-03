@@ -39,6 +39,10 @@ name = "serde_yaml"
 required-features = ["serde_yaml"]
 
 [[example]]
+name = "serde_yaml_long"
+required-features = ["serde_yaml"]
+
+[[example]]
 name = "serde_json"
 required-features = ["serde_json"]
 
