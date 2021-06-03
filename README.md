@@ -52,10 +52,19 @@ Error:
    |           ^ values[2]: invalid type: map, expected a string at line 4 column 10
 ```
 
-## More examples
+## Examples
 
+### serde_json
 !["example serde_json output"](resources/example_output/serde_json.png)
+
+### serde_json_long
 !["example serde_json_long output"](resources/example_output/serde_json_long.png)
 
+### serde_yaml
 !["example serde_yaml output"](resources/example_output/serde_yaml.png)
+
+### serde_yaml_long
 !["example serde_yaml_long output"](resources/example_output/serde_yaml_long.png)
+
+### custom
+!["example custom output"](resources/example_output/custom.png)
