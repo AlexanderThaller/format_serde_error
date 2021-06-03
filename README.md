@@ -16,7 +16,7 @@ emit a line and column.
 Also has a custom error type which supports printing a message with a given
 line and column (see [examples/custom.rs](examples/custom.rs)).
 
-!["example output"](resources/example.png)
+!["example serde_json_long output"](resources/example_output/serde_json_long.png)
 
 Usage Example (from [examples/serde_yaml.rs](examples/serde_yaml.rs)):
 
@@ -51,3 +51,11 @@ Error:
  4 |   - third:
    |           ^ values[2]: invalid type: map, expected a string at line 4 column 10
 ```
+
+## More examples
+
+!["example serde_json output"](resources/example_output/serde_json.png)
+!["example serde_json_long output"](resources/example_output/serde_json_long.png)
+
+!["example serde_yaml output"](resources/example_output/serde_yaml.png)
+!["example serde_yaml_long output"](resources/example_output/serde_yaml_long.png)

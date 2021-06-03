@@ -72,8 +72,15 @@ pub use control::{
 /// Amount of lines to show before and after the line containing the error.
 pub const CONTEXT_LINES: usize = 3;
 
-/// Sepperator used between the line numbering and the lines
+/// Amount of characters to show before and after the column containing the
+/// error.
+pub const CONTEXT_CHARACTERS: usize = 30;
+
+/// Sepperator used between the line numbering and the lines.
 const SEPARATOR: &str = " | ";
+
+/// Ellipse used to indicated if a long line hase been contextualized.
+const ELLIPSE: &str = "...";
 
 /// Struct for formatting the error together with the source file to give a
 /// nicer output.
@@ -298,14 +305,25 @@ impl SerdeError {
         fill_line_position: &str,
     ) -> Result<(), std::fmt::Error> {
         if line_position == error_line {
-            Self::format_error_line(f, text, line_position, separator)?;
+            let (context_line, new_error_column, context_before, context_after) =
+                Self::context_long_line(text, error_column, CONTEXT_CHARACTERS);
+
+            Self::format_error_line(
+                f,
+                &context_line,
+                line_position,
+                separator,
+                context_before,
+                context_after,
+            )?;
 
             self.format_error_information(
                 f,
                 whitespace_count,
                 separator,
                 fill_line_position,
-                error_column,
+                new_error_column,
+                context_before,
             )
         } else {
             Self::format_context_line(f, text, separator, fill_line_position)
@@ -316,10 +334,10 @@ impl SerdeError {
         f: &mut fmt::Formatter<'_>,
         text: &str,
         line_position: usize,
-
         #[cfg(feature = "colored")] separator: &colored::ColoredString,
-
         #[cfg(not(feature = "colored"))] separator: &str,
+        context_before: bool,
+        context_after: bool,
     ) -> Result<(), std::fmt::Error> {
         #[cfg(feature = "colored")]
         let line_pos = line_position.to_string().blue().bold();
@@ -327,7 +345,25 @@ impl SerdeError {
         #[cfg(not(feature = "colored"))]
         let line_pos = line_position;
 
-        writeln!(f, " {}{}{}", line_pos, separator, text)
+        write!(f, " {}{}", line_pos, separator)?;
+
+        if context_before {
+            #[cfg(feature = "colored")]
+            write!(f, "{}", (ELLIPSE.blue().bold()))?;
+            #[cfg(not(feature = "colored"))]
+            write!(f, "{}", ELLIPSE)?;
+        }
+
+        write!(f, "{}", text)?;
+
+        if context_after {
+            #[cfg(feature = "colored")]
+            write!(f, "{}", (ELLIPSE.blue().bold()))?;
+            #[cfg(not(feature = "colored"))]
+            write!(f, "{}", ELLIPSE)?;
+        }
+
+        writeln!(f)
     }
 
     fn format_error_information(
@@ -340,14 +376,18 @@ impl SerdeError {
 
         fill_line_position: &str,
         error_column: usize,
+        context_before: bool,
     ) -> Result<(), std::fmt::Error> {
+        let ellipse_space = if context_before { 3 } else { 0 };
+
         // Print whitespace until we reach the column value of the message. We also
         // have to add the amount of whitespace in front of the other lines.
+        // If context_before is true we also need to add the space used by the ellipse
         let fill_column_position = format!(
             "{: >column$}^ {}",
             "",
             self.message,
-            column = error_column - whitespace_count
+            column = error_column - whitespace_count + ellipse_space
         );
 
         #[cfg(feature = "colored")]
@@ -374,5 +414,59 @@ impl SerdeError {
 
         #[cfg(not(feature = "colored"))]
         return writeln!(f, " {}{}{}", fill_line_position, separator, text);
+    }
+
+    fn context_long_line(
+        text: &str,
+        error_column: usize,
+        context_chars: usize,
+    ) -> (String, usize, bool, bool) {
+        #[cfg(feature = "graphemes_support")]
+        use unicode_segmentation::UnicodeSegmentation;
+
+        #[cfg(feature = "graphemes_support")]
+        // As we could deal with unicode we can have characters that are multiple code
+        // points. In that case we do not want to iterate over each code point
+        // (i.e. using text.chars()) we need to use graphemes instead.
+        let input = text.graphemes(true).collect::<Vec<_>>();
+
+        #[cfg(not(feature = "graphemes_support"))]
+        // If graphemes are not something we expect to deal with we can also just use chars
+        // instead.
+        let input = text.chars().collect::<Vec<_>>();
+
+        // Skip until we are amount of context chars before the error column (context)
+        // plus the column with the error ( + 1) Saturating sub if the error is
+        // in the first few chars we can't take more context
+        let skip = usize::saturating_sub(error_column, context_chars + 1);
+
+        // Take chars before and after (context_chars * 2) plus the column with the
+        // error ( + 1)
+        let take = context_chars * 2 + 1;
+
+        // If we skipped any characters that means we are contextualizing before the
+        // error. That means that we need to print ... at the beginning of the error
+        // line later on in the code.
+        let context_before = skip != 0;
+
+        // If the line is bigger than skipping and taking combined that means that we
+        // not getting the remaining text of the line after the error. That
+        // means that we need to print ... at the end of the error line later on
+        // in the code.
+        let context_after = skip + take < input.len();
+
+        let minimized_input = input.into_iter().skip(skip).take(take).collect();
+
+        // Error column has moved to the right as we skipped some characters so we need
+        // to update it. Saturating sub as the error could be at the beginning
+        // of the line.
+        let new_error_column = usize::saturating_sub(error_column, skip);
+
+        (
+            minimized_input,
+            new_error_column,
+            context_before,
+            context_after,
+        )
     }
 }
