@@ -20,10 +20,10 @@ edition = "2018"
 all-features = true
 
 [features]
-default = ["serde_json"]
+default = ["serde_json", "colored"]
 
 [dependencies]
-colored = "2"
+colored = { version = "2", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", optional = true }
 serde_yaml = { version = "0.8", optional = true }
