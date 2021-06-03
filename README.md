@@ -8,6 +8,8 @@ Serde error messages for humans.
 
 Format serde errors in a way to make it obvious where the error in the source file was.
 
+!["example serde_json_long output"](resources/example_output/serde_json_long.png)
+
 Currently [serde_yaml](https://github.com/serde-rs/json) and
 [serde_json](https://github.com/dtolnay/serde-yaml) are supported. Extending the
 library to more data types should be relativly easy as long as the errors
@@ -15,8 +17,6 @@ emit a line and column.
 
 Also has a custom error type which supports printing a message with a given
 line and column (see [examples/custom.rs](examples/custom.rs)).
-
-!["example serde_json_long output"](resources/example_output/serde_json_long.png)
 
 Usage Example (from [examples/serde_yaml.rs](examples/serde_yaml.rs)):
 
