@@ -49,14 +49,18 @@
 #![warn(clippy::unwrap_used)]
 #![warn(rust_2018_idioms, unused_lifetimes, missing_debug_implementations)]
 
+#[cfg(feature = "colored")]
 use colored::Colorize;
+
 use std::fmt;
 
+#[cfg(feature = "colored")]
 mod control;
 
 #[cfg(test)]
 mod test;
 
+#[cfg(feature = "colored")]
 pub use control::{
     always_color,
     never_color,
@@ -68,6 +72,9 @@ pub use control::{
 /// Amount of lines to show before and after the line containing the error.
 pub const CONTEXT_LINES: usize = 3;
 
+/// Sepperator used between the line numbering and the lines
+const SEPARATOR: &str = " | ";
+
 /// Struct for formatting the error together with the source file to give a
 /// nicer output.
 #[derive(Debug)]
@@ -78,17 +85,30 @@ pub struct SerdeError {
     column: Option<usize>,
 }
 
-/// Supported error types by the crate. Currently only [`serde_yaml`] and
-/// [`serde_json`] are supported.
+/// Contains the error that will be used by [`SerdeError`] to format the output.
+/// For this to work the error needs to support emitting the line and column of
+/// the error. We are implementing [`Into`] for some common types. If a error
+/// type is not implemented yet the [`ErrorTypes::Custom`] can be used instead.
 #[derive(Debug)]
 pub enum ErrorTypes {
+    #[cfg(feature = "serde_json")]
+    /// Contains [`serde_json::Error`].
+    Json(serde_json::Error),
+
     #[cfg(feature = "serde_yaml")]
     /// Contains [`serde_yaml::Error`].
     Yaml(serde_yaml::Error),
 
-    #[cfg(feature = "serde_json")]
-    /// Contains [`serde_json::Error`].
-    Json(serde_json::Error),
+    /// Used for custom errors that don't come from serde_yaml or
+    /// serde_json.
+    Custom {
+        /// Error message that should be displayed.
+        error: Box<dyn std::error::Error>,
+        /// Line the error occured at.
+        line: Option<usize>,
+        /// Column the error occured at.
+        column: Option<usize>,
+    },
 }
 
 impl std::error::Error for SerdeError {}
@@ -99,6 +119,13 @@ impl fmt::Display for SerdeError {
     }
 }
 
+#[cfg(feature = "serde_json")]
+impl From<serde_json::Error> for ErrorTypes {
+    fn from(err: serde_json::Error) -> Self {
+        Self::Json(err)
+    }
+}
+
 #[cfg(feature = "serde_yaml")]
 impl From<serde_yaml::Error> for ErrorTypes {
     fn from(err: serde_yaml::Error) -> Self {
@@ -106,10 +133,13 @@ impl From<serde_yaml::Error> for ErrorTypes {
     }
 }
 
-#[cfg(feature = "serde_json")]
-impl From<serde_json::Error> for ErrorTypes {
-    fn from(err: serde_json::Error) -> Self {
-        Self::Json(err)
+impl From<(Box<dyn std::error::Error>, Option<usize>, Option<usize>)> for ErrorTypes {
+    fn from(value: (Box<dyn std::error::Error>, Option<usize>, Option<usize>)) -> Self {
+        Self::Custom {
+            error: value.0,
+            line: value.1,
+            column: value.2,
+        }
     }
 }
 
@@ -120,6 +150,9 @@ impl SerdeError {
         let error = err.into();
 
         let (message, line, column) = match error {
+            #[cfg(feature = "serde_json")]
+            ErrorTypes::Json(e) => (e.to_string(), Some(e.line()), Some(e.column())),
+
             #[cfg(feature = "serde_yaml")]
             ErrorTypes::Yaml(e) => match e.location() {
                 // Don't set line/column if we don't have a location
@@ -132,8 +165,11 @@ impl SerdeError {
                 ),
             },
 
-            #[cfg(feature = "serde_json")]
-            ErrorTypes::Json(e) => (e.to_string(), Some(e.line()), Some(e.column())),
+            ErrorTypes::Custom {
+                error,
+                line,
+                column,
+            } => (error.to_string(), line, column),
         };
 
         Self {
@@ -148,7 +184,11 @@ impl SerdeError {
         // If line and column are not set we assume that we can't make a nice output
         // so we will just print the original message in red and bold
         if self.line.is_none() && self.column.is_none() {
+            #[cfg(feature = "colored")]
             return writeln!(f, "{}", self.message.red().bold());
+
+            #[cfg(not(feature = "colored"))]
+            return writeln!(f, "{}", self.message);
         }
 
         let error_line = self.line.unwrap_or_default();
@@ -174,7 +214,11 @@ impl SerdeError {
         // well. In that case we can't make a nice output so we will just print
         // the original message in red and bold
         if minimized_input.is_empty() {
+            #[cfg(feature = "colored")]
             return writeln!(f, "{}", self.message.red().bold());
+
+            #[cfg(not(feature = "colored"))]
+            return writeln!(f, "{}", self.message);
         }
 
         // To reduce the amount of space text takes we want to remove unnecessary
@@ -190,7 +234,11 @@ impl SerdeError {
             .min()
             .unwrap_or_default();
 
-        let separator = " | ".blue().bold();
+        #[cfg(feature = "colored")]
+        let separator = SEPARATOR.blue().bold();
+
+        #[cfg(not(feature = "colored"))]
+        let separator = SEPARATOR;
 
         // When we don't print the line_position we want to fill up the space not used
         // by the line_position with whitespace instead
@@ -242,7 +290,11 @@ impl SerdeError {
         error_column: usize,
         text: &str,
         whitespace_count: usize,
-        separator: &colored::ColoredString,
+
+        #[cfg(feature = "colored")] separator: &colored::ColoredString,
+
+        #[cfg(not(feature = "colored"))] separator: &str,
+
         fill_line_position: &str,
     ) -> Result<(), std::fmt::Error> {
         if line_position == error_line {
@@ -264,22 +316,28 @@ impl SerdeError {
         f: &mut fmt::Formatter<'_>,
         text: &str,
         line_position: usize,
-        separator: &colored::ColoredString,
+
+        #[cfg(feature = "colored")] separator: &colored::ColoredString,
+
+        #[cfg(not(feature = "colored"))] separator: &str,
     ) -> Result<(), std::fmt::Error> {
-        writeln!(
-            f,
-            " {}{}{}",
-            line_position.to_string().blue().bold(),
-            separator,
-            text
-        )
+        #[cfg(feature = "colored")]
+        let line_pos = line_position.to_string().blue().bold();
+
+        #[cfg(not(feature = "colored"))]
+        let line_pos = line_position;
+
+        writeln!(f, " {}{}{}", line_pos, separator, text)
     }
 
     fn format_error_information(
         &self,
         f: &mut fmt::Formatter<'_>,
         whitespace_count: usize,
-        separator: &colored::ColoredString,
+        #[cfg(feature = "colored")] separator: &colored::ColoredString,
+
+        #[cfg(not(feature = "colored"))] separator: &str,
+
         fill_line_position: &str,
         error_column: usize,
     ) -> Result<(), std::fmt::Error> {
@@ -292,21 +350,29 @@ impl SerdeError {
             column = error_column - whitespace_count
         );
 
+        #[cfg(feature = "colored")]
+        let fill_column_position = fill_column_position.red().bold();
+
         writeln!(
             f,
             " {}{}{}",
-            fill_line_position,
-            separator,
-            fill_column_position.red().bold(),
+            fill_line_position, separator, fill_column_position,
         )
     }
 
     fn format_context_line(
         f: &mut fmt::Formatter<'_>,
         text: &str,
-        separator: &colored::ColoredString,
+        #[cfg(feature = "colored")] separator: &colored::ColoredString,
+
+        #[cfg(not(feature = "colored"))] separator: &str,
+
         fill_line_position: &str,
     ) -> Result<(), std::fmt::Error> {
-        writeln!(f, " {}{}{}", fill_line_position, separator, text.yellow())
+        #[cfg(feature = "colored")]
+        return writeln!(f, " {}{}{}", fill_line_position, separator, text.yellow());
+
+        #[cfg(not(feature = "colored"))]
+        return writeln!(f, " {}{}{}", fill_line_position, separator, text);
     }
 }

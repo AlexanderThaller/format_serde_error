@@ -13,9 +13,12 @@ Currently [serde_yaml](https://github.com/serde-rs/json) and
 library to more data types should be relativly easy as long as the errors
 emit a line and column.
 
+Also has a custom error type which supports printing a message with a given
+line and column (see [examples/custom.rs](examples/custom.rs)).
+
 !["example output"](resources/example.png)
 
-Usage Example:
+Usage Example (from [examples/serde_yaml.rs](examples/serde_yaml.rs)):
 
 ```rust
 use format_serde_error::SerdeError;
