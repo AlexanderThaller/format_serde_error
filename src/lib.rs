@@ -46,31 +46,35 @@
 //! ## `serde_yaml`
 //! *Enabled by default:* yes
 //!
-//! Enables support for errors emitted by `serde_yaml`. Enables the implementation to convert
-//! [`serde_yaml::Error`] to [`SerdeError`] using the [`From`] trait. Also extends the
-//! [`ErrorTypes`] enum by [`ErrorTypes::Yaml`].
+//! Enables support for errors emitted by `serde_yaml`. Enables the
+//! implementation to convert [`serde_yaml::Error`] to [`SerdeError`] using the
+//! [`From`] trait. Also extends the [`ErrorTypes`] enum by
+//! [`ErrorTypes::Yaml`].
 //!
 //! ## `serde_json`
 //! *Enabled by default:* yes
 //!
-//! Enables support for errors emitted by `serde_json`. Enables the implementation to convert
-//! [`serde_json::Error`] to [`SerdeError`] using the [`From`] trait. Also extends the
-//! [`ErrorTypes`] enum by [`ErrorTypes::Json`].
+//! Enables support for errors emitted by `serde_json`. Enables the
+//! implementation to convert [`serde_json::Error`] to [`SerdeError`] using the
+//! [`From`] trait. Also extends the [`ErrorTypes`] enum by
+//! [`ErrorTypes::Json`].
 //!
 //! ## `colored`
 //! *Enabled by default:* yes
 //!
-//! Enables support for color output to a terminal using the [`colored`] crate. Also enables the
-//! functions [`always_color`], [`never_color`], [`set_coloring_mode`], [`use_environment`] and the
-//! enum [`ColoringMode`] which allow changing the behavior of [`colored`].
+//! Enables support for color output to a terminal using the [`colored`] crate.
+//! Also enables the functions [`always_color`], [`never_color`],
+//! [`set_coloring_mode`], [`use_environment`] and the enum [`ColoringMode`]
+//! which allow changing the behavior of [`colored`].
 //!
 //! ## `graphemes_support`
 //! *Enabled by default:* yes
 //!
-//! Enables proper support for grapheme cluster when contextualizing long error lines. Without this
-//! feature the crate will just split the line using [`std::str::Chars`]. This can mean that
-//! certain error messages won't get formatted properly when a string contains unicode grapheme
-//! clusters. You can check the test `test::context_long_line::graphemes_string` for an example.
+//! Enables proper support for grapheme cluster when contextualizing long error
+//! lines. Without this feature the crate will just split the line using
+//! [`std::str::Chars`]. This can mean that certain error messages won't get
+//! formatted properly when a string contains unicode grapheme clusters. You can
+//! check the test `test::context_long_line::graphemes_string` for an example.
 
 #![deny(missing_docs)]
 #![forbid(unsafe_code)]
