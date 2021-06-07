@@ -28,16 +28,18 @@ struct Config {
     values: Vec<String>,
 }
 
-fn parse_config() -> Result<Config, anyhow::Error> {
-  let config_str = "values:
+fn main() -> Result<(), anyhow::Error> {
+    let config_str = "values:
   - 'first'
   - 'second'
   - third:";
 
-  let config = serde_yaml::from_str::<Config>(config_str)
-    .map_err(|err| SerdeError::new(config_str.to_string(), err))?;
+    let config = serde_yaml::from_str::<Config>(config_str)
+        .map_err(|err| SerdeError::new(config_str.to_string(), err))?;
 
-  Ok(config)
+    dbg!(config);
+
+    Ok(())
 }
 ```
 
@@ -51,6 +53,30 @@ Error:
  4 |   - third:
    |           ^ values[2]: invalid type: map, expected a string at line 4 column 10
 ```
+
+!["example serde_yaml output"](resources/example_output/serde_yaml.png)
+
+# Crate Features
+
+## `serde_yaml`
+*Enabled by default:* yes
+
+Enables support for errors emitted by `serde_yaml`.
+
+## `serde_json`
+*Enabled by default:* yes
+
+Enables support for errors emitted by `serde_json`.
+
+## `colored`
+*Enabled by default:* yes
+
+Enables support for color output to a terminal using the `colored` crate.
+
+## `graphemes_support`
+*Enabled by default:* yes
+
+Enables proper support for grapheme cluster when contextualizing long error lines.
 
 ## Examples
 

@@ -20,7 +20,7 @@ edition = "2018"
 all-features = true
 
 [features]
-default = ["serde_json", "colored", "graphemes_support"]
+default = ["serde_yaml", "serde_json", "colored", "graphemes_support"]
 graphemes_support = ["unicode-segmentation"]
 
 [dependencies]
