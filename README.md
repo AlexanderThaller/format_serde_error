@@ -56,6 +56,23 @@ Error:
 
 !["example serde_yaml output"](resources/example_output/serde_yaml.png)
 
+The crate will also shorten long lines if necessary (from
+[examples/serde_yaml.rs](examples/serde_yaml.rs)):
+```
+Error:
+   | values:
+   |   - 'first'
+   |   - 'second'
+ 4 |   - third: Lorem ipsum dolor sit amet, consectetur adipiscing...
+   |           ^ values[2]: invalid type: map, expected a string at line 4 column 10
+```
+
+!["example serde_yaml output"](resources/example_output/serde_yaml_long.png)
+
+The amount of context for lines and characters can be controlled globally and
+per error. See documentation for how to do that. Adding context and shortening
+the lines can also be disabled.
+
 ## Crate Features
 
 ### `serde_yaml`

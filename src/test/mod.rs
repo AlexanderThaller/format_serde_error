@@ -458,11 +458,13 @@ mod context_long_line {
 mod custom {
     use pretty_assertions::assert_eq;
 
+    /// Test with a short line
     #[test]
-    fn custom_error() {
+    fn short_line() {
         super::init();
 
-        let config_str = "this is just a config file\nthe error is here: !";
+        let config_str =
+            "this is just a config file\nthe error is here: !\nanother line in the config";
         let line = 2;
         let column = 19;
         let err = format!("Found an error at line {}, column {}", line, column);
@@ -471,6 +473,7 @@ mod custom {
         expected.push_str("   | this is just a config file\n");
         expected.push_str(" 2 | the error is here: !\n");
         expected.push_str("   |                    ^ Found an error at line 2, column 19\n");
+        expected.push_str("   | another line in the config\n");
 
         let got = format!(
             "{}",
@@ -486,13 +489,75 @@ mod custom {
         assert_eq!(expected, got);
     }
 
+    /// Test with a short line where we set the amount of context lines to 0 to
+    /// show no context lines
     #[test]
-    fn custom_error_long_line() {
+    fn short_line_change_no_line_context() {
+        super::init();
+
+        let config_str =
+            "this is just a config file\nthe error is here: !\nanother line in the config";
+        let line = 2;
+        let column = 19;
+        let err = format!("Found an error at line {}, column {}", line, column);
+
+        let mut expected = String::from("\n");
+        expected.push_str(" 2 | the error is here: !\n");
+        expected.push_str("   |                    ^ Found an error at line 2, column 19\n");
+
+        let got = format!(
+            "{}",
+            super::SerdeError::new(
+                config_str.to_string(),
+                (err.into(), Some(line), Some(column))
+            )
+            .set_context_lines(0)
+        );
+
+        println!("got:\n{}", got);
+        println!("expected:\n{}", expected);
+
+        assert_eq!(expected, got);
+    }
+
+    /// Test with a short line where context is disabled
+    #[test]
+    fn short_line_disable_context() {
+        super::init();
+
+        let config_str =
+            "this is just a config file\nthe error is here: !\nanother line in the config";
+        let line = 2;
+        let column = 19;
+        let err = format!("Found an error at line {}, column {}", line, column);
+
+        let mut expected = String::from("\n");
+        expected.push_str(" 2 | the error is here: !\n");
+        expected.push_str("   |                    ^ Found an error at line 2, column 19\n");
+
+        let got = format!(
+            "{}",
+            super::SerdeError::new(
+                config_str.to_string(),
+                (err.into(), Some(line), Some(column))
+            )
+            .set_contextualize(false)
+        );
+
+        println!("got:\n{}", got);
+        println!("expected:\n{}", expected);
+
+        assert_eq!(expected, got);
+    }
+
+    /// Test with long lines
+    #[test]
+    fn long_line() {
         super::init();
 
         let config_str = "this is just a config file\nthe error that is somewhere in this line \
                           will be found somewhere after here maybe we can find it here: !, it \
-                          could also be somewhere else maybe we will find that out someda, it \
+                          could also be somewhere else maybe we will find that out someday, it \
                           could also be somewhere else maybe we will find that out someday";
         let line = 2;
         let column = 103;
@@ -512,6 +577,39 @@ mod custom {
                 config_str.to_string(),
                 (err.into(), Some(line), Some(column))
             )
+        );
+
+        println!("got:\n{}", got);
+        println!("expected:\n{}", expected);
+
+        assert_eq!(expected, got);
+    }
+
+    /// Test with long lines but less context characters
+    #[test]
+    fn long_line_change_context_characters() {
+        super::init();
+
+        let config_str = "this is just a config file\nthe error that is somewhere in this line \
+                          will be found somewhere after here maybe we can find it here: !, it \
+                          could also be somewhere else maybe we will find that out someday, it \
+                          could also be somewhere else maybe we will find that out someday";
+        let line = 2;
+        let column = 103;
+        let err = format!("Found an error at line {}, column {}", line, column);
+
+        let mut expected = String::from("\n");
+        expected.push_str("   | this is just a config file\n");
+        expected.push_str(" 2 | ...d it here: !, it coul...\n");
+        expected.push_str("   |               ^ Found an error at line 2, column 103\n");
+
+        let got = format!(
+            "{}",
+            super::SerdeError::new(
+                config_str.to_string(),
+                (err.into(), Some(line), Some(column))
+            )
+            .set_context_characters(10)
         );
 
         println!("got:\n{}", got);
