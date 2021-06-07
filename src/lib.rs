@@ -85,7 +85,13 @@
 #[cfg(feature = "colored")]
 use colored::Colorize;
 
-use std::fmt;
+use std::{
+    fmt,
+    sync::atomic::{
+        AtomicUsize,
+        Ordering,
+    },
+};
 
 #[cfg(feature = "colored")]
 mod control;
@@ -103,16 +109,45 @@ pub use control::{
 };
 
 /// Amount of lines to show before and after the line containing the error.
-pub const CONTEXT_LINES: usize = 3;
+pub const CONTEXT_LINES_DEFAULT: usize = 3;
+static CONTEXT_LINES: AtomicUsize = AtomicUsize::new(CONTEXT_LINES_DEFAULT);
+
+/// Set the default amount of context lines shown. Default amount of context is
+/// [`CONTEXT_LINES_DEFAULT`]. If you want to change the amount context shown
+/// for a single error use [`SerdeError::set_context_lines`] instead.
+pub fn set_default_context_lines(amount_of_context: usize) {
+    CONTEXT_LINES.store(amount_of_context, Ordering::Relaxed);
+}
+
+/// Get the current default amount of context lines shown. Default amount of
+/// context is [`CONTEXT_LINES_DEFAULT`].
+pub fn get_default_context_lines() -> usize {
+    CONTEXT_LINES.load(Ordering::Relaxed)
+}
 
 /// Amount of characters to show before and after the column containing the
 /// error.
-pub const CONTEXT_CHARACTERS: usize = 30;
+pub const CONTEXT_CHARACTERS_DEFAULT: usize = 30;
+static CONTEXT_CHARACTERS: AtomicUsize = AtomicUsize::new(CONTEXT_CHARACTERS_DEFAULT);
+
+/// Set the default amount of context characters shown. Default amount of
+/// context is [`CONTEXT_CHARACTERS_DEFAULT`]. If you want to change the amount
+/// context shown for a single error use [`SerdeError::set_context_characters`]
+/// instead.
+pub fn set_default_context_characters(amount_of_context: usize) {
+    CONTEXT_CHARACTERS.store(amount_of_context, Ordering::Relaxed);
+}
+
+/// Get the current default amount of context characters shown. Default amount
+/// of context is [`CONTEXT_CHARACTERS_DEFAULT`].
+pub fn get_default_context_characters() -> usize {
+    CONTEXT_CHARACTERS.load(Ordering::Relaxed)
+}
 
 /// Separator used between the line numbering and the lines.
 const SEPARATOR: &str = " | ";
 
-/// Ellipse used to indicated if a long line hase been contextualized.
+/// Ellipse used to indicated if a long line has been contextualized.
 const ELLIPSE: &str = "...";
 
 /// Struct for formatting the error together with the source file to give a
@@ -123,6 +158,8 @@ pub struct SerdeError {
     message: String,
     line: Option<usize>,
     column: Option<usize>,
+    context_lines: usize,
+    context_characters: usize,
 }
 
 /// Contains the error that will be used by [`SerdeError`] to format the output.
@@ -144,9 +181,9 @@ pub enum ErrorTypes {
     Custom {
         /// Error message that should be displayed.
         error: Box<dyn std::error::Error>,
-        /// Line the error occured at.
+        /// Line the error occurred at.
         line: Option<usize>,
-        /// Column the error occured at.
+        /// Column the error occurred at.
         column: Option<usize>,
     },
 }
@@ -217,7 +254,37 @@ impl SerdeError {
             message,
             line,
             column,
+            context_lines: CONTEXT_LINES.load(Ordering::Relaxed),
+            context_characters: CONTEXT_CHARACTERS.load(Ordering::Relaxed),
         }
+    }
+
+    /// Set the amount of lines that should be shown before and after the error.
+    /// By default the amount of context is set to `CONTEXT_LINES_DEFAULT`.
+    pub fn set_context_lines(&mut self, amount_of_context: usize) -> &mut Self {
+        self.context_lines = amount_of_context;
+        self
+    }
+
+    /// Get the amount of lines that should be shown before and after the error.
+    #[must_use]
+    pub fn get_context_lines(&self) -> usize {
+        self.context_lines
+    }
+
+    /// Set the amount of characters that should be shown before and after the
+    /// error. By default the amount of context is set to
+    /// `CONTEXT_CHARACTERS_DEFAULT`.
+    pub fn set_context_characters(&mut self, amount_of_context: usize) -> &mut Self {
+        self.context_characters = amount_of_context;
+        self
+    }
+
+    /// Get the amount of characters that should be shown before and after the
+    /// error. Default value is `CONTEXT_CHARACTERS_DEFAULT`.
+    #[must_use]
+    pub fn get_context_characters(&self) -> usize {
+        self.context_characters
     }
 
     fn format(&self, f: &mut fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -235,7 +302,7 @@ impl SerdeError {
         let error_column = self.column.unwrap_or_default();
 
         // Amount of lines to show before and after the error line
-        let context_lines = CONTEXT_LINES;
+        let context_lines = self.context_lines;
 
         // Skip until we are amount of context lines before the error line (context)
         // plus the line with the error ( + 1)
@@ -338,8 +405,10 @@ impl SerdeError {
         fill_line_position: &str,
     ) -> Result<(), std::fmt::Error> {
         if line_position == error_line {
+            let context_characters = self.context_characters;
+
             let (context_line, new_error_column, context_before, context_after) =
-                Self::context_long_line(text, error_column, CONTEXT_CHARACTERS);
+                Self::context_long_line(text, error_column, context_characters);
 
             Self::format_error_line(
                 f,
