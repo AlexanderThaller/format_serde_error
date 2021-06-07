@@ -58,22 +58,22 @@ Error:
 
 ## Crate Features
 
-## `serde_yaml`
+### `serde_yaml`
 *Enabled by default:* yes
 
 Enables support for errors emitted by `serde_yaml`.
 
-## `serde_json`
+### `serde_json`
 *Enabled by default:* yes
 
 Enables support for errors emitted by `serde_json`.
 
-## `colored`
+### `colored`
 *Enabled by default:* yes
 
 Enables support for color output to a terminal using the `colored` crate.
 
-## `graphemes_support`
+### `graphemes_support`
 *Enabled by default:* yes
 
 Enables proper support for grapheme cluster when contextualizing long error lines.
