@@ -42,6 +42,39 @@
 //!  4 |   - third:
 //!    |           ^ values[2]: invalid type: map, expected a string at line 4 column 10
 //! ```
+//!
+//! # Context Behavior
+//!
+//! By default the crate will show preceding and following lines (default
+//! [`CONTEXT_LINES_DEFAULT`]).
+//!
+//! By default the crate will also shorten long lines if needed and only show a
+//! certain amount of context instead (default [`CONTEXT_CHARACTERS_DEFAULT`]).
+//! A long line means that the line is longer than `context_characters` * 2 + 1.
+//! Which means that a long line is longer than the context that should be shown
+//! on either side of the error plus the error itself.
+//!
+//! To change the behavior there are the following functions:
+//!
+//! * [`set_default_contextualize`]: Enable or disable contextualization. When
+//! false the crate will show
+//! no context lines and keep the error line as is even if its very long. This
+//! can also be changed for a single error using
+//! [`SerdeError::set_contextualize`].
+//!
+//! * [`set_default_context_lines`]: Set the amount of context lines that should
+//! be shown. For example if
+//! the amount of context is set to 5 the crate will print 5 lines before the
+//! error and 5 lines after the error if possible. This can also be changed for
+//! a single error using [`SerdeError::set_context_lines`].
+//!
+//! * [`set_default_context_characters`]: Set the amount of characters shown
+//! before and after a error when a line is shortened. For example if the amount
+//! of context ist set to 30 the create will print 30 characters before the
+//! error column and 30 characters after the error column if possible. This can
+//! also be changed for a single error using
+//! [`SerdeError::set_context_characters`].
+//!
 //! # Crate Features
 //! ## `serde_yaml`
 //! *Enabled by default:* yes
@@ -439,8 +472,11 @@ impl SerdeError {
         fill_line_position: &str,
     ) -> Result<(), std::fmt::Error> {
         if line_position == error_line {
+            let long_line_threshold = self.context_characters * 2 + 1;
+            let long_line_threshold = long_line_threshold < text.len();
+
             let (context_line, new_error_column, context_before, context_after) =
-                if self.contextualize {
+                if self.contextualize && long_line_threshold {
                     let context_characters = self.context_characters;
                     Self::context_long_line(&text, error_column, context_characters)
                 } else {
@@ -519,7 +555,7 @@ impl SerdeError {
         error_column: usize,
         context_before: bool,
     ) -> Result<(), std::fmt::Error> {
-        let ellipse_space = if context_before { 3 } else { 0 };
+        let ellipse_space = if context_before { ELLIPSE.len() } else { 0 };
 
         // Print whitespace until we reach the column value of the message. We also
         // have to add the amount of whitespace in front of the other lines.
