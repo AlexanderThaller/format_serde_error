@@ -88,6 +88,7 @@ use colored::Colorize;
 use std::{
     fmt,
     sync::atomic::{
+        AtomicBool,
         AtomicUsize,
         Ordering,
     },
@@ -108,12 +109,29 @@ pub use control::{
     ColoringMode,
 };
 
+/// If the output should be contextualized or not.
+pub const CONTEXTUALIZE_DEFAULT: bool = true;
+static CONTEXTUALIZE: AtomicBool = AtomicBool::new(CONTEXTUALIZE_DEFAULT);
+
+/// Set the default if contextualization should be enabled or not. Default value
+/// is [`CONTEXTUALIZE_DEFAULT`]. If you want to change the amount of context
+/// shown for a single error use [`SerdeError::set_contextualize`] instead.
+pub fn set_default_contextualize(should_contextualize: bool) {
+    CONTEXTUALIZE.store(should_contextualize, Ordering::Relaxed);
+}
+
+/// Get the current default if contextualization should be enabled or not.
+/// Default value is [`CONTEXTUALIZE_DEFAULT`].
+pub fn get_default_contextualize() -> usize {
+    CONTEXT_LINES.load(Ordering::Relaxed)
+}
+
 /// Amount of lines to show before and after the line containing the error.
 pub const CONTEXT_LINES_DEFAULT: usize = 3;
 static CONTEXT_LINES: AtomicUsize = AtomicUsize::new(CONTEXT_LINES_DEFAULT);
 
 /// Set the default amount of context lines shown. Default amount of context is
-/// [`CONTEXT_LINES_DEFAULT`]. If you want to change the amount context shown
+/// [`CONTEXT_LINES_DEFAULT`]. If you want to change the amount of context shown
 /// for a single error use [`SerdeError::set_context_lines`] instead.
 pub fn set_default_context_lines(amount_of_context: usize) {
     CONTEXT_LINES.store(amount_of_context, Ordering::Relaxed);
@@ -158,6 +176,7 @@ pub struct SerdeError {
     message: String,
     line: Option<usize>,
     column: Option<usize>,
+    contextualize: bool,
     context_lines: usize,
     context_characters: usize,
 }
@@ -254,13 +273,28 @@ impl SerdeError {
             message,
             line,
             column,
+            contextualize: CONTEXTUALIZE.load(Ordering::Relaxed),
             context_lines: CONTEXT_LINES.load(Ordering::Relaxed),
             context_characters: CONTEXT_CHARACTERS.load(Ordering::Relaxed),
         }
     }
 
+    /// Set if the output should be contextualized or not.
+    /// By default contextualization is set to [`CONTEXTUALIZE_DEFAULT`].
+    pub fn set_contextualize(&mut self, should_contextualize: bool) -> &mut Self {
+        self.contextualize = should_contextualize;
+        self
+    }
+
+    /// Get if the output should be contextualized or not.
+    /// By default contextualization is set to [`CONTEXTUALIZE_DEFAULT`].
+    #[must_use]
+    pub fn get_contextualize(&self) -> bool {
+        self.contextualize
+    }
+
     /// Set the amount of lines that should be shown before and after the error.
-    /// By default the amount of context is set to `CONTEXT_LINES_DEFAULT`.
+    /// By default the amount of context is set to [`CONTEXT_LINES_DEFAULT`].
     pub fn set_context_lines(&mut self, amount_of_context: usize) -> &mut Self {
         self.context_lines = amount_of_context;
         self
@@ -274,14 +308,14 @@ impl SerdeError {
 
     /// Set the amount of characters that should be shown before and after the
     /// error. By default the amount of context is set to
-    /// `CONTEXT_CHARACTERS_DEFAULT`.
+    /// [`CONTEXT_CHARACTERS_DEFAULT`].
     pub fn set_context_characters(&mut self, amount_of_context: usize) -> &mut Self {
         self.context_characters = amount_of_context;
         self
     }
 
     /// Get the amount of characters that should be shown before and after the
-    /// error. Default value is `CONTEXT_CHARACTERS_DEFAULT`.
+    /// error. Default value is [`CONTEXT_CHARACTERS_DEFAULT`].
     #[must_use]
     pub fn get_context_characters(&self) -> usize {
         self.context_characters
@@ -376,7 +410,7 @@ impl SerdeError {
                     line_position,
                     error_line,
                     error_column,
-                    &text,
+                    text,
                     whitespace_count,
                     &separator,
                     &fill_line_position,
@@ -395,7 +429,7 @@ impl SerdeError {
         line_position: usize,
         error_line: usize,
         error_column: usize,
-        text: &str,
+        text: String,
         whitespace_count: usize,
 
         #[cfg(feature = "colored")] separator: &colored::ColoredString,
@@ -405,10 +439,13 @@ impl SerdeError {
         fill_line_position: &str,
     ) -> Result<(), std::fmt::Error> {
         if line_position == error_line {
-            let context_characters = self.context_characters;
-
             let (context_line, new_error_column, context_before, context_after) =
-                Self::context_long_line(text, error_column, context_characters);
+                if self.contextualize {
+                    let context_characters = self.context_characters;
+                    Self::context_long_line(&text, error_column, context_characters)
+                } else {
+                    (text, error_column, false, false)
+                };
 
             Self::format_error_line(
                 f,
@@ -427,8 +464,10 @@ impl SerdeError {
                 new_error_column,
                 context_before,
             )
+        } else if self.contextualize {
+            Self::format_context_line(f, &text, separator, fill_line_position)
         } else {
-            Self::format_context_line(f, text, separator, fill_line_position)
+            Ok(())
         }
     }
 
