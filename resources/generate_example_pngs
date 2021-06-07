@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+examples="$(cargo run --example 2>&1 | sed 1d | sed 1d | tr -d ' ' | grep -vE '^$')"
+
+for example in ${examples}; do
+  echo "generating example ${example}"
+
+  tmpfile="$(mktemp)"
+  tmpfile_ansi="$(mktemp)"
+
+  cargo run --all-features --example "${example}" > /dev/null 2>&1
+
+  # From https://stackoverflow.com/a/42621724
+  script --quiet --return "${tmpfile}" --command "cargo run --all-features --example ${example}" > "${tmpfile_ansi}"
+
+  ansi2png-rs -i "${tmpfile_ansi}" -o "example_output/${example}.png"
+
+  rm "${tmpfile}"
+  rm "${tmpfile_ansi}"
+done
+
