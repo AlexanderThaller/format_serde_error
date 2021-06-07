@@ -56,7 +56,7 @@ Error:
 
 !["example serde_yaml output"](resources/example_output/serde_yaml.png)
 
-# Crate Features
+## Crate Features
 
 ## `serde_yaml`
 *Enabled by default:* yes
