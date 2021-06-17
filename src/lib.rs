@@ -391,8 +391,6 @@ impl SerdeError {
             .map(|line| line.replace("\t", " "))
             .collect::<Vec<_>>();
 
-        dbg!(&minimized_input);
-
         // If the minimized_input is empty we can assume that the input was empty as
         // well. In that case we can't make a nice output so we will just print
         // the original message in red and bold

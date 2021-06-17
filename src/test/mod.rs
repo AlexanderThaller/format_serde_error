@@ -301,8 +301,6 @@ mod context_long_line {
             super::SerdeError::context_long_line(input, error_column, context_chars);
         let got_char = got.chars().nth(new_error_column - 1).unwrap_or_default();
 
-        dbg!(new_error_column);
-
         assert_eq!(expected, got);
         assert_eq!(expected_char, got_char);
         assert!(!context_before);
