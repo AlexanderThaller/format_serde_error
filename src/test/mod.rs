@@ -617,4 +617,63 @@ mod custom {
 
         assert_eq!(expected, got);
     }
+
+    /// Test for handling tabs single line
+    #[test]
+    fn tabs_single_line() {
+        super::init();
+
+        let config_str = "\t\t\t123456789error123456789";
+        let line = 1;
+        let column = 12;
+        let err = format!("Found an error at line {}, column {}", line, column);
+
+        let mut expected = String::from("\n");
+        expected.push_str(" 1 | 123456789error123456789\n");
+        expected.push_str("   |          ^ Found an error at line 1, column 12\n");
+
+        let got = format!(
+            "{}",
+            super::SerdeError::new(
+                config_str.to_string(),
+                (err.into(), Some(line), Some(column))
+            )
+            .set_context_characters(99)
+        );
+
+        println!("expected:\n{}", expected);
+        println!("got:\n{}", got);
+
+        assert_eq!(expected, got);
+    }
+
+    /// Test for handling tabs with multiple lines
+    #[test]
+    fn tabs_multiple_lines() {
+        super::init();
+
+        let config_str = "\t\t\t123456789error123456789\nanother line";
+        let line = 1;
+        let column = 12;
+        let err = format!("Found an error at line {}, column {}", line, column);
+
+        let mut expected = String::from("\n");
+        expected.push_str(" 1 |    123456789error123456789\n");
+        expected.push_str("   |             ^ Found an error at line 1, column 12\n");
+        expected.push_str("   | another line\n");
+
+        let got = format!(
+            "{}",
+            super::SerdeError::new(
+                config_str.to_string(),
+                (err.into(), Some(line), Some(column))
+            )
+            .set_context_characters(99)
+        );
+
+        println!("expected:\n{}", expected);
+        println!("got:\n{}", got);
+
+        assert_eq!(expected, got);
+    }
 }

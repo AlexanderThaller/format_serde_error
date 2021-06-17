@@ -382,7 +382,16 @@ impl SerdeError {
 
         // Minimize the input to only what we need so we can reuse it without
         // having to iterate over the whole input again.
-        let minimized_input = self.input.lines().skip(skip).take(take).collect::<Vec<_>>();
+        // Also replace tabs with two spaces
+        let minimized_input = self
+            .input
+            .lines()
+            .skip(skip)
+            .take(take)
+            .map(|line| line.replace("\t", " "))
+            .collect::<Vec<_>>();
+
+        dbg!(&minimized_input);
 
         // If the minimized_input is empty we can assume that the input was empty as
         // well. In that case we can't make a nice output so we will just print
@@ -434,7 +443,10 @@ impl SerdeError {
                 // Also remove unnecessary whitespace in front of text
                 (
                     index + 1,
-                    text.chars().skip(whitespace_count).collect::<String>(),
+                    text.chars()
+                        .skip(whitespace_count)
+                        .collect::<String>()
+                        .replace("\t", " "),
                 )
             })
             .try_for_each(|(line_position, text)| {
