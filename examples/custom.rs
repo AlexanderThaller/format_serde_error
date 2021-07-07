@@ -13,6 +13,6 @@ fn main() -> Result<(), anyhow::Error> {
   - 'second'
   - third:";
 
-    let err = anyhow!("values[2]: invalid type: map, expected a string at line 4 column 10");
-    Err(SerdeError::new(config_str.to_string(), (err.into(), Some(4), Some(10))).into())
+    let err = anyhow!("values[2]: invalid type: map, expected a string at line 4 column 9");
+    Err(SerdeError::new(config_str.to_string(), (err.into(), Some(4), Some(9))).into())
 }
