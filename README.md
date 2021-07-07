@@ -118,3 +118,6 @@ Enables proper support for grapheme cluster when contextualizing long error line
 
 ### custom
 !["example custom output"](resources/example_output/custom.png)
+
+### custom_tabs
+!["example custom_tabs output"](resources/example_output/custom_tabs.png)
