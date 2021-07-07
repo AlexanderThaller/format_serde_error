@@ -14,7 +14,7 @@ Add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-prometheus_exporter = "0.3"
+format_serde_error = "0.3"
 ```
 
 Currently [serde_yaml](https://github.com/serde-rs/json) and
