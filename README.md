@@ -10,6 +10,13 @@ Format serde errors in a way to make it obvious where the error in the source fi
 
 !["example serde_json_long output"](resources/example_output/serde_json_long.png)
 
+Add this to your Cargo.toml:
+
+```toml
+[dependencies]
+prometheus_exporter = "0.3"
+```
+
 Currently [serde_yaml](https://github.com/serde-rs/json) and
 [serde_json](https://github.com/dtolnay/serde-yaml) are supported. Extending the
 library to more data types should be relativly easy as long as the errors
