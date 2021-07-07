@@ -290,7 +290,7 @@ impl SerdeError {
                 Some(location) => (
                     e.to_string(),
                     Some(location.line()),
-                    Some(location.column()),
+                    Some(location.column() - 1),
                 ),
             },
 
