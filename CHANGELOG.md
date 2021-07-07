@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 [2021-07-07]
+
+* [BUG]: Fix issue with tabs. Tabs will now be replaced by a single space. That
+makes it easier to reuse the existing formatting infastructure.
+* [BUG]: Fix off by one error with columns in yaml errors. The indicator where
+the error occured was one too much to the right.
+
 ## 0.2.0 [2021-06-07]
 
 * Contextualize long lines in the output [#1]
