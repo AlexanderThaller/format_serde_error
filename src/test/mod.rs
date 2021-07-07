@@ -83,7 +83,7 @@ mod yaml {
         expected.push_str(&format!(
             "    {}{}\n",
             separator,
-            "          ^ values[112]: invalid type: map, expected a string at line 114 column 12"
+            "         ^ values[112]: invalid type: map, expected a string at line 114 column 12"
                 .red()
                 .bold()
         ));
