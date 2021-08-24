@@ -7,7 +7,7 @@ struct Config {
 
 fn main() -> Result<(), anyhow::Error> {
     let config_str = r#"values = [
-	"first",
+    "first",
     "second",
     third =
 ]"#;
