@@ -228,6 +228,10 @@ pub enum ErrorTypes {
     /// Contains [`serde_yaml::Error`].
     Yaml(serde_yaml::Error),
 
+    #[cfg(feature = "toml")]
+    /// Contains [`toml::de::Error'].
+    Toml(toml::de::Error),
+
     /// Used for custom errors that don't come from serde_yaml or
     /// serde_json.
     Custom {
@@ -262,6 +266,13 @@ impl From<serde_yaml::Error> for ErrorTypes {
     }
 }
 
+#[cfg(feature = "toml")]
+impl From<toml::de::Error> for ErrorTypes {
+    fn from(err: toml::de::Error) -> Self {
+        Self::Toml(err)
+    }
+}
+
 impl From<(Box<dyn std::error::Error>, Option<usize>, Option<usize>)> for ErrorTypes {
     fn from(value: (Box<dyn std::error::Error>, Option<usize>, Option<usize>)) -> Self {
         Self::Custom {
@@ -292,6 +303,14 @@ impl SerdeError {
                     Some(location.line()),
                     Some(location.column() - 1),
                 ),
+            },
+
+            #[cfg(feature = "toml")]
+            ErrorTypes::Toml(e) => match e.line_col() {
+                // Don't set line/column if we do not have the values
+                None => (e.to_string(), None, None),
+
+                Some((line, column)) => (e.to_string(), Some(line + 1), Some(column)),
             },
 
             ErrorTypes::Custom {
