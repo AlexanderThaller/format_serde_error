@@ -92,6 +92,11 @@ Enables support for errors emitted by `serde_yaml`.
 
 Enables support for errors emitted by `serde_json`.
 
+### `toml`
+*Enabled by default:* yes
+
+Enables support for errors emitted by `toml`.
+
 ### `colored`
 *Enabled by default:* yes
 
