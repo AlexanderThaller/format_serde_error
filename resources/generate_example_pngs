@@ -11,7 +11,7 @@ for example in ${examples}; do
   cargo run --all-features --example "${example}" > /dev/null 2>&1
 
   # From https://stackoverflow.com/a/42621724
-  script --quiet --return "${tmpfile}" --command "cargo run --all-features --example ${example}" > "${tmpfile_ansi}"
+  script --quiet --return "${tmpfile}" --command "cargo run --all-features --example ${example} 2> >(grep -vE 'Finished|Running')" > "${tmpfile_ansi}"
 
   ansi2png-rs -i "${tmpfile_ansi}" -o "example_output/${example}.png"
 
