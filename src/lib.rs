@@ -229,7 +229,7 @@ pub enum ErrorTypes {
     Yaml(serde_yaml::Error),
 
     #[cfg(feature = "toml")]
-    /// Contains [`toml::de::Error'].
+    /// Contains [`toml::de::Error`].
     Toml(toml::de::Error),
 
     /// Used for custom errors that don't come from serde_yaml or
