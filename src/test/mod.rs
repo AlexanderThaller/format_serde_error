@@ -32,7 +32,10 @@ mod toml {
     use colored::Colorize;
     use pretty_assertions::assert_eq;
 
-    use super::{Config, SerdeError};
+    use super::{
+        Config,
+        SerdeError,
+    };
 
     fn run_toml(config_str: &str) -> Result<String, anyhow::Error> {
         match toml::from_str::<Config>(config_str) {
