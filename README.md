@@ -116,6 +116,9 @@ Enables proper support for grapheme cluster when contextualizing long error line
 ### serde_yaml_long
 !["example serde_yaml_long output"](resources/example_output/serde_yaml_long.png)
 
+### toml
+!["example toml"](resources/example_output/toml.png)
+
 ### custom
 !["example custom output"](resources/example_output/custom.png)
 
