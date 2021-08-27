@@ -22,26 +22,26 @@ pub enum ColoringMode {
 /// color or not [`ColoringMode::UseEnvironment`].
 pub fn set_coloring_mode(control: &ColoringMode) {
     match control {
-        ColoringMode::AlwaysColor => always_color(),
-        ColoringMode::NeverColor => never_color(),
-        ColoringMode::UseEnvironment => use_environment(),
+        ColoringMode::AlwaysColor => colored::control::set_override(true),
+        ColoringMode::NeverColor => colored::control::set_override(false),
+        ColoringMode::UseEnvironment => colored::control::unset_override(),
     }
-}
-
-/// Set coloring mode to always use color in the output
-/// ([`ColoringMode::AlwaysColor`]).
-pub fn never_color() {
-    colored::control::set_override(false);
 }
 
 /// Set coloring mode to never use color in the output
 /// ([`ColoringMode::NeverColor`]).
+pub fn never_color() {
+    set_coloring_mode(&ColoringMode::NeverColor)
+}
+
+/// Set coloring mode to always use color in the output
+/// ([`ColoringMode::AlwaysColor`]).
 pub fn always_color() {
-    colored::control::set_override(true);
+    set_coloring_mode(&ColoringMode::AlwaysColor)
 }
 
 /// Set coloring mode detect if color should be used in the output or not
 /// ([`ColoringMode::UseEnvironment`]).
 pub fn use_environment() {
-    colored::control::unset_override();
+    set_coloring_mode(&ColoringMode::UseEnvironment)
 }
