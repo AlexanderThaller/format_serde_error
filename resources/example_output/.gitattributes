@@ -4,3 +4,4 @@ serde_json.png filter=lfs diff=lfs merge=lfs -text
 serde_yaml_long.png filter=lfs diff=lfs merge=lfs -text
 serde_yaml.png filter=lfs diff=lfs merge=lfs -text
 custom_tabs.png filter=lfs diff=lfs merge=lfs -text
+toml.png filter=lfs diff=lfs merge=lfs -text
