@@ -17,8 +17,8 @@ Add this to your Cargo.toml:
 format_serde_error = "0.3"
 ```
 
-Currently [serde_yaml](https://github.com/serde-rs/json) and
-[serde_json](https://github.com/dtolnay/serde-yaml) are supported. Extending the
+Currently [serde_yaml](https://github.com/serde-rs/json),
+[serde_json](https://github.com/dtolnay/serde-yaml) and [toml](https://github.com/alexcrichton/toml-rs) are supported. Extending the
 library to more data types should be relativly easy as long as the errors
 emit a line and column.
 
