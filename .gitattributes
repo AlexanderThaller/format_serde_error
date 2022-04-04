@@ -1,0 +1,7 @@
+resources/example_output/serde_yaml_long.png filter=lfs diff=lfs merge=lfs -text
+resources/example_output/serde_yaml.png filter=lfs diff=lfs merge=lfs -text
+resources/example_output/toml.png filter=lfs diff=lfs merge=lfs -text
+resources/example_output/custom.png filter=lfs diff=lfs merge=lfs -text
+resources/example_output/custom_tabs.png filter=lfs diff=lfs merge=lfs -text
+resources/example_output/serde_json_long.png filter=lfs diff=lfs merge=lfs -text
+resources/example_output/serde_json.png filter=lfs diff=lfs merge=lfs -text
