@@ -17,8 +17,8 @@ Add this to your Cargo.toml:
 format_serde_error = "0.3"
 ```
 
-Currently [serde_yaml](https://github.com/serde-rs/json),
-[serde_json](https://github.com/dtolnay/serde-yaml) and [toml](https://github.com/alexcrichton/toml-rs) are supported. Extending the
+Currently [serde_yaml](https://github.com/serde-rs/json) and 
+[serde_json](https://github.com/dtolnay/serde-yaml) are supported. Extending the
 library to more data types should be relativly easy as long as the errors
 emit a line and column.
 
@@ -92,11 +92,6 @@ Enables support for errors emitted by `serde_yaml`.
 
 Enables support for errors emitted by `serde_json`.
 
-### `toml`
-*Enabled by default:* yes
-
-Enables support for errors emitted by `toml`.
-
 ### `colored`
 *Enabled by default:* yes
 
@@ -120,9 +115,6 @@ Enables proper support for grapheme cluster when contextualizing long error line
 
 ### serde_yaml_long
 !["example serde_yaml_long output"](resources/example_output/serde_yaml_long.png)
-
-### toml
-!["example toml"](resources/example_output/toml.png)
 
 ### custom
 !["example custom output"](resources/example_output/custom.png)
