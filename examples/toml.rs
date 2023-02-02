@@ -2,6 +2,7 @@ use format_serde_error::SerdeError;
 
 #[derive(Debug, serde::Deserialize)]
 struct Config {
+    #[allow(dead_code)]
     values: Vec<String>,
 }
 
