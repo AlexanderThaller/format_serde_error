@@ -1,8 +1,5 @@
 #[cfg(feature = "colored")]
-use colored::{
-    ColoredString,
-    Colorize,
-};
+use colored::{ColoredString, Colorize};
 
 mod config;
 
@@ -32,10 +29,7 @@ mod toml {
     use colored::Colorize;
     use pretty_assertions::assert_eq;
 
-    use super::{
-        Config,
-        SerdeError,
-    };
+    use super::{Config, SerdeError};
 
     fn run_toml(config_str: &str) -> Result<String, anyhow::Error> {
         match toml::from_str::<Config>(config_str) {
@@ -110,10 +104,7 @@ mod yaml {
     use colored::Colorize;
     use pretty_assertions::assert_eq;
 
-    use super::{
-        Config,
-        SerdeError,
-    };
+    use super::{Config, SerdeError};
 
     fn run_yaml(config_str: &str) -> Result<String, anyhow::Error> {
         match serde_yaml::from_str::<Config>(config_str) {
@@ -127,7 +118,7 @@ mod yaml {
         super::init();
 
         let input = "";
-        let expected = format!("{}\n", "EOF while parsing a value".red().bold());
+        let expected = format!("{}\n", "missing field `values`".red().bold());
         let got = run_yaml(input)?;
 
         print!("expected:{}", expected);
@@ -161,7 +152,7 @@ mod yaml {
         expected.push_str(&format!(
             "    {}{}\n",
             separator,
-            "         ^ values[112]: invalid type: map, expected a string at line 114 column 12"
+            "  ^ values[112]: invalid type: map, expected a string at line 114 column 5"
                 .red()
                 .bold()
         ));
@@ -188,10 +179,7 @@ mod json {
     use colored::Colorize;
     use pretty_assertions::assert_eq;
 
-    use super::{
-        Config,
-        SerdeError,
-    };
+    use super::{Config, SerdeError};
 
     fn run_json(config_str: &str) -> Result<String, anyhow::Error> {
         match serde_json::from_str::<Config>(config_str) {

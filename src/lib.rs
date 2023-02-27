@@ -120,11 +120,7 @@ use colored::Colorize;
 
 use std::{
     fmt,
-    sync::atomic::{
-        AtomicBool,
-        AtomicUsize,
-        Ordering,
-    },
+    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
 #[cfg(feature = "colored")]
@@ -134,13 +130,7 @@ mod control;
 mod test;
 
 #[cfg(feature = "colored")]
-pub use control::{
-    always_color,
-    never_color,
-    set_coloring_mode,
-    use_environment,
-    ColoringMode,
-};
+pub use control::{always_color, never_color, set_coloring_mode, use_environment, ColoringMode};
 
 /// If the output should be contextualized or not.
 pub const CONTEXTUALIZE_DEFAULT: bool = true;
