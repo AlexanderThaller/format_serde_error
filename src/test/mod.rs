@@ -127,7 +127,7 @@ mod yaml {
         super::init();
 
         let input = "";
-        let expected = format!("{}\n", "EOF while parsing a value".red().bold());
+        let expected = format!("{}\n", "missing field `values`".red().bold());
         let got = run_yaml(input)?;
 
         print!("expected:{}", expected);
@@ -161,7 +161,7 @@ mod yaml {
         expected.push_str(&format!(
             "    {}{}\n",
             separator,
-            "         ^ values[112]: invalid type: map, expected a string at line 114 column 12"
+            "  ^ values[112]: invalid type: map, expected a string at line 114 column 5"
                 .red()
                 .bold()
         ));

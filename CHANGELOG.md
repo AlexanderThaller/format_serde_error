@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 [2022-08-09]
+
+* Bump `serde_yaml` to 0.9
+
 ## 0.3.0 [2021-07-07]
 
 * [BUG]: Fix issue with tabs. Tabs will now be replaced by a single space. That
