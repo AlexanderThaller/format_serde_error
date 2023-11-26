@@ -120,11 +120,7 @@ use colored::Colorize;
 
 use std::{
     fmt,
-    sync::atomic::{
-        AtomicBool,
-        AtomicUsize,
-        Ordering,
-    },
+    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
 #[cfg(feature = "colored")]
@@ -134,13 +130,7 @@ mod control;
 mod test;
 
 #[cfg(feature = "colored")]
-pub use control::{
-    always_color,
-    never_color,
-    set_coloring_mode,
-    use_environment,
-    ColoringMode,
-};
+pub use control::{always_color, never_color, set_coloring_mode, use_environment, ColoringMode};
 
 /// If the output should be contextualized or not.
 pub const CONTEXTUALIZE_DEFAULT: bool = true;
@@ -232,6 +222,10 @@ pub enum ErrorTypes {
     /// Contains [`toml::de::Error`].
     Toml(toml::de::Error),
 
+    #[cfg(feature = "ron")]
+    /// Contains [`ron::de::Error`].
+    Ron(ron::error::SpannedError),
+
     /// Used for custom errors that don't come from serde_yaml or
     /// serde_json.
     Custom {
@@ -270,6 +264,13 @@ impl From<serde_yaml::Error> for ErrorTypes {
 impl From<toml::de::Error> for ErrorTypes {
     fn from(err: toml::de::Error) -> Self {
         Self::Toml(err)
+    }
+}
+
+#[cfg(feature = "ron")]
+impl From<ron::de::SpannedError> for ErrorTypes {
+    fn from(err: ron::de::SpannedError) -> Self {
+        Self::Ron(err)
     }
 }
 
@@ -312,6 +313,13 @@ impl SerdeError {
 
                 Some((line, column)) => (e.to_string(), Some(line + 1), Some(column)),
             },
+
+            #[cfg(feature = "ron")]
+            ErrorTypes::Ron(e) => (
+                e.code.to_string(),
+                Some(e.position.line),
+                Some(e.position.col),
+            ),
 
             ErrorTypes::Custom {
                 error,
